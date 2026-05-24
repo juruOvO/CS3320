@@ -24,3 +24,16 @@ temp
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code local settings
+.claude/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Data — original PDFs and the intermediate JSON aren't in git
+# (too large; reproducible from the PDFs via scripts/build_play_json.py + build_*.py)
+# but `data/` IS committed — it's the small derived layer the FastAPI server reads.
+京剧剧本/
+京剧剧本_json/

@@ -1,0 +1,768 @@
+"""FastAPI backend serving the 8 endpoints defined in BACKEND_API_REQUIREMENTS.md.
+
+Loads all derived data from ../data/*.json at startup, holds it in memory, and
+applies the 7 global filter params per request.
+
+Run:  uvicorn server.main:app --reload --port 8000
+"""
+from __future__ import annotations
+
+import json
+import math
+from collections import Counter, defaultdict
+from itertools import combinations
+from pathlib import Path
+from typing import Any, Optional
+
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / "data"
+SRC = ROOT / "京剧剧本_json"
+
+# ===========================================================
+# Load everything at startup
+# ===========================================================
+def load_json(name: str) -> Any:
+    p = DATA / name
+    if not p.exists():
+        return None
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
+print("Loading data ...", flush=True)
+PLAYS: list[dict] = load_json("plays.json") or []
+CHARS: list[dict] = load_json("characters.json") or []
+RELATIONS: dict = load_json("relations.json") or {}
+NARRATIVES: dict = load_json("narratives.json") or {}
+THEMES: dict = load_json("themes.json") or {}
+
+PLAY_BY_ID: dict[str, dict] = {p["id"]: p for p in PLAYS}
+CHARS_BY_ID: dict[str, dict] = {c["id"]: c for c in CHARS}
+CHARS_BY_PLAY: dict[str, list[dict]] = defaultdict(list)
+for c in CHARS:
+    CHARS_BY_PLAY[c["playId"]].append(c)
+
+THEMES_RECORDS: list[dict] = THEMES.get("themes", [])  # [{playId, theme, weight}]
+THEMES_BY_PLAY: dict[str, list[dict]] = defaultdict(list)
+for t in THEMES_RECORDS:
+    THEMES_BY_PLAY[t["playId"]].append(t)
+
+NARRATIVE_TENSIONS: list[dict] = NARRATIVES.get("tensionSeries", [])
+TENSIONS_BY_PLAY: dict[str, list[dict]] = defaultdict(list)
+for t in NARRATIVE_TENSIONS:
+    TENSIONS_BY_PLAY[t["playId"]].append(t)
+
+REL_EDGES: list[dict] = RELATIONS.get("edges", [])
+REL_NODES: list[dict] = RELATIONS.get("nodes", [])
+
+# Per-play indices (precomputed once — used to avoid scanning REL_EDGES per request)
+REL_EDGES_BY_PLAY: dict[str, list[dict]] = defaultdict(list)
+for e in REL_EDGES:
+    REL_EDGES_BY_PLAY[e["playId"]].append(e)
+REL_NODES_BY_PLAY: dict[str, list[dict]] = defaultdict(list)
+for n in REL_NODES:
+    REL_NODES_BY_PLAY[n["playId"]].append(n)
+
+# Per-play signature: dominant relation + top theme + pattern + genre + title.
+# Used by /api/associations to avoid O(plays × edges) scan per request.
+PLAY_SIGNATURE: dict[str, dict] = {}
+for pid in PLAY_BY_ID:
+    p = PLAY_BY_ID[pid]
+    rel_ct = Counter()
+    for e in REL_EDGES_BY_PLAY.get(pid, []):
+        rel_ct[e["relationType"]] += e.get("weight", 0)
+    dom_rel = rel_ct.most_common(1)[0][0] if rel_ct else "共现"
+    themes_p = sorted(THEMES_BY_PLAY.get(pid, []), key=lambda t: -t.get("weight", 0))
+    top_theme = themes_p[0]["theme"] if themes_p else "未知"
+    PLAY_SIGNATURE[pid] = {
+        "playId": pid,
+        "title": p.get("title", pid),
+        "dominantRelation": dom_rel,
+        "topTheme": top_theme,
+        "narrativePattern": p.get("narrativePattern", ""),
+        "genre": p.get("genre", "其他"),
+    }
+
+print(f"  plays={len(PLAYS)} chars={len(CHARS)} edges={len(REL_EDGES)} "
+      f"themes={len(THEMES_RECORDS)} tensionRows={len(NARRATIVE_TENSIONS)}", flush=True)
+print(f"  precomputed PLAY_SIGNATURE for {len(PLAY_SIGNATURE)} plays", flush=True)
+
+
+# Payload size caps when no narrow filter is applied
+MAX_NODES_GLOBAL = 120
+MAX_EDGES_GLOBAL = 500
+MAX_CHARS_GLOBAL = 500
+MAX_TENSION_GLOBAL = 1500
+MAX_TURNING_GLOBAL = 300
+
+
+# ===========================================================
+# App
+# ===========================================================
+app = FastAPI(title="京剧可视分析 API", version="0.1")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ===========================================================
+# Filtering
+# ===========================================================
+def common_filters(
+    period: Optional[str] = None,
+    genre: Optional[str] = None,
+    playId: Optional[str] = None,
+    roleType: Optional[str] = None,
+    characterId: Optional[str] = None,
+    theme: Optional[str] = None,
+    narrativePattern: Optional[str] = None,
+) -> dict[str, Optional[str]]:
+    return {
+        "period": period or None,
+        "genre": genre or None,
+        "playId": playId or None,
+        "roleType": roleType or None,
+        "characterId": characterId or None,
+        "theme": theme or None,
+        "narrativePattern": narrativePattern or None,
+    }
+
+
+def filter_play_ids(filters: dict) -> set[str]:
+    out_ids: set[str] = set()
+    theme_ids: Optional[set[str]] = None
+    if filters["theme"]:
+        theme_ids = {t["playId"] for t in THEMES_RECORDS if t["theme"] == filters["theme"]}
+    for p in PLAYS:
+        if filters["period"] and p.get("period") != filters["period"]:
+            continue
+        if filters["genre"] and p.get("genre") != filters["genre"]:
+            continue
+        if filters["playId"] and p["id"] != filters["playId"]:
+            continue
+        if filters["narrativePattern"] and p.get("narrativePattern") != filters["narrativePattern"]:
+            continue
+        if theme_ids is not None and p["id"] not in theme_ids:
+            continue
+        out_ids.add(p["id"])
+    if filters["characterId"]:
+        c = CHARS_BY_ID.get(filters["characterId"])
+        if c:
+            out_ids = {c["playId"]} if not out_ids else (out_ids & {c["playId"]})
+        else:
+            out_ids = set()
+    return out_ids
+
+
+def filter_chars(filters: dict, play_ids: set[str]) -> list[dict]:
+    out = []
+    for c in CHARS:
+        if c["playId"] not in play_ids:
+            continue
+        if filters["roleType"] and c.get("roleMain") != filters["roleType"]:
+            continue
+        if filters["characterId"] and c["id"] != filters["characterId"]:
+            continue
+        out.append(c)
+    return out
+
+
+# ===========================================================
+# /api/filter-options
+# ===========================================================
+@app.get("/api/filter-options")
+def get_filter_options():
+    periods = sorted({p["period"] for p in PLAYS if p.get("period")})
+    genres = sorted({p["genre"] for p in PLAYS if p.get("genre")})
+    plays = sorted(
+        [{"id": p["id"], "title": p["title"]} for p in PLAYS],
+        key=lambda x: x["id"],
+    )
+    role_types = sorted({c["roleMain"] for c in CHARS if c.get("roleMain")})
+    themes = sorted({t["theme"] for t in THEMES_RECORDS if t.get("theme")})
+    patterns = sorted({p["narrativePattern"] for p in PLAYS if p.get("narrativePattern")})
+    return {
+        "periods": periods,
+        "genres": genres,
+        "plays": plays,
+        "roleTypes": role_types,
+        "themes": themes,
+        "narrativePatterns": patterns,
+    }
+
+
+# ===========================================================
+# /api/overview
+# ===========================================================
+@app.get("/api/overview")
+def get_overview(
+    period: Optional[str] = None,
+    genre: Optional[str] = None,
+    playId: Optional[str] = None,
+    roleType: Optional[str] = None,
+    characterId: Optional[str] = None,
+    theme: Optional[str] = None,
+    narrativePattern: Optional[str] = None,
+):
+    filters = common_filters(period, genre, playId, roleType, characterId, theme, narrativePattern)
+    play_ids = filter_play_ids(filters)
+    chars = filter_chars(filters, play_ids)
+    relevant_plays = [PLAY_BY_ID[i] for i in play_ids if i in PLAY_BY_ID]
+
+    # summary
+    inferred_count = sum(1 for c in chars if not c.get("isMainCharacter") and c.get("roleMain"))
+    theme_set = {t["theme"] for pid in play_ids for t in THEMES_BY_PLAY.get(pid, [])}
+    relation_count = sum(1 for e in REL_EDGES if e["playId"] in play_ids)
+    avg_scene = (sum(p.get("sceneCount", 0) for p in relevant_plays) /
+                 max(len(relevant_plays), 1))
+    summary = {
+        "playCount": len(relevant_plays),
+        "characterCount": len(chars),
+        "inferredRoleCount": inferred_count,
+        "themeCount": len(theme_set),
+        "relationCount": relation_count,
+        "avgSceneCount": round(avg_scene, 2),
+    }
+
+    # period × genre
+    pg = Counter()
+    for p in relevant_plays:
+        pg[(p.get("period", "未知"), p.get("genre", "其他"))] += 1
+    period_genre = [
+        {"period": pe, "genre": ge, "value": v}
+        for (pe, ge), v in pg.most_common()
+    ]
+
+    # role distribution
+    rd = Counter(c["roleMain"] for c in chars if c.get("roleMain"))
+    role_distribution = [{"roleType": k, "value": v} for k, v in rd.most_common()]
+
+    # top themes
+    tc = Counter()
+    for pid in play_ids:
+        for t in THEMES_BY_PLAY.get(pid, []):
+            tc[t["theme"]] += 1
+    top_themes = [{"theme": k, "value": v} for k, v in tc.most_common(15)]
+
+    # narrative patterns
+    np_ct = Counter(p.get("narrativePattern", "") for p in relevant_plays if p.get("narrativePattern"))
+    narr_patterns = [{"pattern": k, "value": v} for k, v in np_ct.most_common()]
+
+    play_list = [
+        {
+            "id": p["id"],
+            "title": p["title"],
+            "period": p.get("period", ""),
+            "genre": p.get("genre", ""),
+            "sceneCount": p.get("sceneCount", 0),
+        }
+        for p in relevant_plays
+    ]
+    play_list.sort(key=lambda x: x["id"])
+
+    return {
+        "summary": summary,
+        "periodGenreDistribution": period_genre,
+        "roleDistribution": role_distribution,
+        "topThemes": top_themes,
+        "narrativePatterns": narr_patterns,
+        "apiGuide": [
+            {"endpoint": "/api/overview", "description": "总览统计与剧目清单"},
+            {"endpoint": "/api/character-roles", "description": "角色行当推断"},
+            {"endpoint": "/api/relations", "description": "角色关系网络"},
+            {"endpoint": "/api/themes", "description": "主题结构"},
+            {"endpoint": "/api/narratives", "description": "叙事张力分析"},
+            {"endpoint": "/api/associations", "description": "综合关联分析"},
+        ],
+        "playList": play_list,
+    }
+
+
+# ===========================================================
+# /api/character-roles
+# ===========================================================
+@app.get("/api/character-roles")
+def get_character_roles(
+    period: Optional[str] = None,
+    genre: Optional[str] = None,
+    playId: Optional[str] = None,
+    roleType: Optional[str] = None,
+    characterId: Optional[str] = None,
+    theme: Optional[str] = None,
+    narrativePattern: Optional[str] = None,
+):
+    filters = common_filters(period, genre, playId, roleType, characterId, theme, narrativePattern)
+    play_ids = filter_play_ids(filters)
+    chars = filter_chars(filters, play_ids)
+
+    # Sankey: gender → ageGroup → roleMain
+    sankey_pairs1 = Counter()  # (gender, ageGroup)
+    sankey_pairs2 = Counter()  # (ageGroup, roleMain)
+    role_main_set = set()
+    for c in chars:
+        g = c.get("gender", "未知")
+        a = c.get("ageGroup", "未知")
+        r = c.get("roleMain", "未知")
+        sankey_pairs1[(g, a)] += 1
+        sankey_pairs2[(a, r)] += 1
+        role_main_set.add(r)
+
+    # Build sankey node list with category for each layer
+    nodes_seen: dict[str, str] = {}  # name -> category
+    for (g, a), _ in sankey_pairs1.items():
+        nodes_seen.setdefault(g, "性别")
+        nodes_seen.setdefault(a, "年龄")
+    for (a, r), _ in sankey_pairs2.items():
+        nodes_seen.setdefault(a, "年龄")
+        nodes_seen.setdefault(r, "行当")
+    sankey_nodes = [{"name": n, "category": c} for n, c in nodes_seen.items()]
+    sankey_links = [
+        {"source": g, "target": a, "value": v}
+        for (g, a), v in sankey_pairs1.items()
+    ] + [
+        {"source": a, "target": r, "value": v}
+        for (a, r), v in sankey_pairs2.items()
+    ]
+
+    # Heatmap: period × roleType × feature (avg actionScore / emotionScore / appearanceCount)
+    feature_aggregate: dict[tuple[str, str, str], list[float]] = defaultdict(list)
+    for c in chars:
+        p = PLAY_BY_ID.get(c["playId"], {})
+        period_v = p.get("period", "未知")
+        role = c.get("roleMain", "未知")
+        feature_aggregate[(period_v, role, "actionScore")].append(c.get("actionScore", 0))
+        feature_aggregate[(period_v, role, "emotionScore")].append(c.get("emotionScore", 0))
+        feature_aggregate[(period_v, role, "appearanceCount")].append(c.get("appearanceCount", 0))
+    heatmap = []
+    for (pe, ro, feat), vals in feature_aggregate.items():
+        if not vals:
+            continue
+        avg = sum(vals) / len(vals)
+        heatmap.append({"period": pe, "roleType": ro, "feature": feat, "value": round(avg, 4)})
+
+    # Timeline: period × roleType count
+    timeline_ct = Counter()
+    for c in chars:
+        p = PLAY_BY_ID.get(c["playId"], {})
+        timeline_ct[(p.get("period", "未知"), c.get("roleMain", "未知"))] += 1
+    timeline = [
+        {"period": pe, "roleType": ro, "value": v}
+        for (pe, ro), v in timeline_ct.most_common()
+    ]
+
+    # Characters list — cap when no narrow filter, keep top-N by appearanceCount
+    narrow_filter = bool(filters["playId"] or filters["characterId"])
+    chars_sorted = sorted(chars, key=lambda c: -c.get("appearanceCount", 0))
+    if not narrow_filter and len(chars_sorted) > MAX_CHARS_GLOBAL:
+        chars_sorted = chars_sorted[:MAX_CHARS_GLOBAL]
+    char_records = []
+    for c in chars_sorted:
+        evidence = c.get("evidence", [])
+        if not narrow_filter:
+            evidence = evidence[:1]
+        char_records.append({
+            "id": c["id"],
+            "playId": c["playId"],
+            "name": c["name"],
+            "gender": c.get("gender", "未知"),
+            "ageGroup": c.get("ageGroup", "未知"),
+            "identity": c.get("identity", "其他"),
+            "personalityTags": c.get("personalityTags", []),
+            "roleMain": c.get("roleMain", ""),
+            "roleSubtype": c.get("roleSubtype", ""),
+            "confidence": c.get("confidence", 0.0),
+            "actionScore": c.get("actionScore", 0.0),
+            "emotionScore": c.get("emotionScore", 0.0),
+            "appearanceCount": c.get("appearanceCount", 0),
+            "evidence": evidence,
+        })
+
+    return {
+        "sankeyNodes": sankey_nodes,
+        "sankeyLinks": sankey_links,
+        "heatmap": heatmap,
+        "timeline": timeline,
+        "characters": char_records,
+        "totalCharacters": len(chars),
+    }
+
+
+# ===========================================================
+# /api/relations
+# ===========================================================
+@app.get("/api/relations")
+def get_relations(
+    period: Optional[str] = None,
+    genre: Optional[str] = None,
+    playId: Optional[str] = None,
+    roleType: Optional[str] = None,
+    characterId: Optional[str] = None,
+    theme: Optional[str] = None,
+    narrativePattern: Optional[str] = None,
+):
+    filters = common_filters(period, genre, playId, roleType, characterId, theme, narrativePattern)
+    play_ids = filter_play_ids(filters)
+
+    # Use per-play index instead of scanning the global edge list every request
+    edges: list[dict] = []
+    nodes: list[dict] = []
+    for pid in play_ids:
+        edges.extend(REL_EDGES_BY_PLAY.get(pid, []))
+        nodes.extend(REL_NODES_BY_PLAY.get(pid, []))
+
+    # Optional further filter by roleType / characterId
+    if filters["roleType"]:
+        keep_node_ids = {n["id"] for n in nodes if n.get("roleType") == filters["roleType"]}
+        nodes = [n for n in nodes if n["id"] in keep_node_ids]
+        edges = [e for e in edges if e["source"] in keep_node_ids or e["target"] in keep_node_ids]
+    if filters["characterId"]:
+        edges = [e for e in edges if e["source"] == filters["characterId"] or e["target"] == filters["characterId"]]
+
+    # When no playId narrows the request, the graph is huge (~14k nodes / 49k edges).
+    # Force-directed rendering chokes — return a top-N node subgraph instead.
+    narrow_filter = bool(filters["playId"] or filters["characterId"])
+    total_nodes_before_cap = len(nodes)
+    total_edges_before_cap = len(edges)
+    if not narrow_filter and len(nodes) > MAX_NODES_GLOBAL:
+        nodes_sorted = sorted(nodes, key=lambda n: -n.get("size", 0))[:MAX_NODES_GLOBAL]
+        keep_ids = {n["id"] for n in nodes_sorted}
+        nodes = nodes_sorted
+        edges = [e for e in edges
+                 if e["source"] in keep_ids and e["target"] in keep_ids][:MAX_EDGES_GLOBAL]
+
+    # adjacency aggregated by relationType
+    adj_ct = Counter()
+    for e in edges:
+        adj_ct[(e["relationType"], e["relationType"])] += e["weight"]
+    adjacency = [
+        {"source": rt, "target": rt, "value": v}
+        for (rt, _), v in adj_ct.items()
+    ]
+
+    # metrics by genre (from precomputed)
+    metrics = RELATIONS.get("metrics", [])
+    if filters["genre"]:
+        metrics = [m for m in metrics if m.get("genre") == filters["genre"]]
+
+    # relationTrend (recompute using filtered edges)
+    trend_ct = Counter()
+    for e in edges:
+        pid = e["playId"]
+        sc_total = max((s["sceneNum"] for s in []), default=0)
+        play = PLAY_BY_ID.get(pid)
+        if not play:
+            continue
+        sc_total = play.get("sceneCount", 0) or 1
+        for sn in e["scenes"]:
+            ratio = sn / sc_total
+            bucket = "启" if ratio <= 0.25 else "承" if ratio <= 0.5 else "转" if ratio <= 0.75 else "合"
+            trend_ct[(bucket, e["relationType"])] += 1
+    relation_trend = [
+        {"scene": s, "relationType": r, "value": v}
+        for (s, r), v in trend_ct.most_common()
+    ]
+
+    return {
+        "nodes": nodes,
+        "links": [
+            {
+                "source": e["source"],
+                "target": e["target"],
+                "relationType": e["relationType"],
+                "weight": e["weight"],
+                "scenes": [f"第{n}场" for n in e["scenes"]],
+            }
+            for e in edges
+        ],
+        "adjacency": adjacency,
+        "metrics": metrics,
+        "relationTrend": relation_trend,
+        "totals": {
+            "nodes": total_nodes_before_cap,
+            "edges": total_edges_before_cap,
+            "capped": not narrow_filter and total_nodes_before_cap > MAX_NODES_GLOBAL,
+        },
+    }
+
+
+# ===========================================================
+# /api/themes
+# ===========================================================
+@app.get("/api/themes")
+def get_themes(
+    period: Optional[str] = None,
+    genre: Optional[str] = None,
+    playId: Optional[str] = None,
+    roleType: Optional[str] = None,
+    characterId: Optional[str] = None,
+    theme: Optional[str] = None,
+    narrativePattern: Optional[str] = None,
+):
+    filters = common_filters(period, genre, playId, roleType, characterId, theme, narrativePattern)
+    play_ids = filter_play_ids(filters)
+
+    # When no filter narrows things, return the precomputed structures
+    no_filter = not any(filters.values())
+    if no_filter:
+        return {
+            "sunburst": THEMES.get("sunburst", {"name": "京剧主题", "children": []}),
+            "cooccurrenceNodes": THEMES.get("cooccurrenceNodes", []),
+            "cooccurrenceLinks": THEMES.get("cooccurrenceLinks", []),
+            "genreDistribution": THEMES.get("genreDistribution", []),
+            "combinations": THEMES.get("combinations", []),
+            "playProfiles": THEMES.get("playProfiles", []),
+        }
+
+    # Recompute against filtered plays
+    profiles = [pp for pp in THEMES.get("playProfiles", []) if pp["playId"] in play_ids]
+    theme_count = Counter()
+    cooccur = Counter()
+    combos = Counter()
+    genre_theme = Counter()
+    for pp in profiles:
+        p_meta = PLAY_BY_ID.get(pp["playId"], {})
+        themes_pp = pp.get("topThemes", [])
+        for th in themes_pp:
+            theme_count[th] += 1
+            genre_theme[(p_meta.get("genre", "其他"), th)] += 1
+        for a, b in combinations(sorted(set(themes_pp)), 2):
+            cooccur[(a, b)] += 1
+        combos[tuple(sorted(set(themes_pp)))] += 1
+
+    return {
+        "sunburst": THEMES.get("sunburst", {"name": "京剧主题", "children": []}),
+        "cooccurrenceNodes": [{"id": th, "value": cnt} for th, cnt in theme_count.most_common()],
+        "cooccurrenceLinks": [
+            {"source": a, "target": b, "value": v}
+            for (a, b), v in cooccur.most_common(50)
+        ],
+        "genreDistribution": [
+            {"genre": g, "theme": th, "value": v}
+            for (g, th), v in genre_theme.most_common()
+        ],
+        "combinations": [
+            {"combination": list(c), "value": v}
+            for c, v in combos.most_common(20)
+        ],
+        "playProfiles": profiles,
+    }
+
+
+# ===========================================================
+# /api/narratives
+# ===========================================================
+@app.get("/api/narratives")
+def get_narratives(
+    period: Optional[str] = None,
+    genre: Optional[str] = None,
+    playId: Optional[str] = None,
+    roleType: Optional[str] = None,
+    characterId: Optional[str] = None,
+    theme: Optional[str] = None,
+    narrativePattern: Optional[str] = None,
+):
+    filters = common_filters(period, genre, playId, roleType, characterId, theme, narrativePattern)
+    play_ids = filter_play_ids(filters)
+
+    tension_series = [t for t in NARRATIVE_TENSIONS if t["playId"] in play_ids]
+
+    # performance distribution: stage × form within filtered set
+    perf_ct = Counter()
+    for t in tension_series:
+        perf_ct[(t["stage"], t["form"])] += 1
+    perf_dist = [
+        {"stage": s, "form": f, "value": v}
+        for (s, f), v in perf_ct.most_common()
+    ]
+
+    clusters = [pc for pc in NARRATIVES.get("patternClusters", []) if pc["playId"] in play_ids]
+    turning = [tp for tp in NARRATIVES.get("turningPoints", []) if tp["playId"] in play_ids]
+
+    # Cap when no narrow filter — frontend can't render thousands of points
+    narrow_filter = bool(filters["playId"] or filters["characterId"])
+    total_tension_before_cap = len(tension_series)
+    total_turning_before_cap = len(turning)
+    if not narrow_filter and len(tension_series) > MAX_TENSION_GLOBAL:
+        # Keep peaks (highest tension) — representative of strong scenes
+        tension_series = sorted(tension_series, key=lambda t: -t.get("tension", 0))[:MAX_TENSION_GLOBAL]
+    if not narrow_filter and len(turning) > MAX_TURNING_GLOBAL:
+        turning = sorted(turning, key=lambda t: -t.get("tension", 0))[:MAX_TURNING_GLOBAL]
+
+    return {
+        "stages": NARRATIVES.get("stages", []),
+        "tensionSeries": tension_series,
+        "performanceDistribution": perf_dist,
+        "patternClusters": clusters,
+        "turningPoints": turning,
+        "totals": {
+            "tensionSeries": total_tension_before_cap,
+            "turningPoints": total_turning_before_cap,
+            "capped": not narrow_filter and total_tension_before_cap > MAX_TENSION_GLOBAL,
+        },
+    }
+
+
+# ===========================================================
+# /api/associations
+# ===========================================================
+@app.get("/api/associations")
+def get_associations(
+    period: Optional[str] = None,
+    genre: Optional[str] = None,
+    playId: Optional[str] = None,
+    roleType: Optional[str] = None,
+    characterId: Optional[str] = None,
+    theme: Optional[str] = None,
+    narrativePattern: Optional[str] = None,
+):
+    """Cross-analysis: how relation types × themes × narrative patterns co-vary."""
+    filters = common_filters(period, genre, playId, roleType, characterId, theme, narrativePattern)
+    play_ids = filter_play_ids(filters)
+
+    # Per-play signatures are precomputed at startup — just look them up.
+    play_signatures: list[dict] = [PLAY_SIGNATURE[pid] for pid in play_ids if pid in PLAY_SIGNATURE]
+
+    sankey_links_ct = Counter()
+    matrix_ct = Counter()  # (relationFeature, targetFeature)
+    for sig in play_signatures:
+        genre_v = sig["genre"]
+        dom_rel = sig["dominantRelation"]
+        top_theme = sig["topTheme"]
+        pattern = sig["narrativePattern"]
+        sankey_links_ct[(genre_v, dom_rel)] += 1
+        sankey_links_ct[(dom_rel, top_theme)] += 1
+        sankey_links_ct[(top_theme, pattern)] += 1
+        matrix_ct[(dom_rel, top_theme)] += 1
+
+    nodes_cat = {}
+    for (a, b), _ in sankey_links_ct.items():
+        nodes_cat.setdefault(a, "?")
+        nodes_cat.setdefault(b, "?")
+    # try to label categories from origin layer
+    for d in play_signatures:
+        nodes_cat[d["genre"]] = "类型"
+        nodes_cat[d["dominantRelation"]] = "关系"
+        nodes_cat[d["topTheme"]] = "主题"
+        nodes_cat[d["narrativePattern"]] = "叙事"
+    sankey_nodes = [{"name": n, "category": c} for n, c in nodes_cat.items()]
+    sankey_links = [{"source": a, "target": b, "value": v}
+                    for (a, b), v in sankey_links_ct.items()]
+    matrix = [
+        {"relationFeature": rt, "targetFeature": th, "value": v}
+        for (rt, th), v in matrix_ct.most_common()
+    ]
+
+    # clusters: re-use narratives.patternClusters but enrich with topTheme + dominantRelation
+    base_clusters = {pc["playId"]: pc for pc in NARRATIVES.get("patternClusters", [])}
+    clusters: list[dict] = []
+    for sig in play_signatures:
+        b = base_clusters.get(sig["playId"])
+        if not b:
+            continue
+        clusters.append({
+            "playId": sig["playId"],
+            "title": sig["title"],
+            "genre": sig["genre"],
+            "x": b["x"],
+            "y": b["y"],
+            "pattern": sig["narrativePattern"],
+            "topTheme": sig["topTheme"],
+            "dominantRelation": sig["dominantRelation"],
+        })
+
+    # association rules — simple frequency-based: which (relation, theme) co-occur the most
+    rules = []
+    for idx, ((rt, th), v) in enumerate(matrix_ct.most_common(15), 1):
+        support = v / max(len(play_signatures), 1)
+        # confidence: of plays with this relation, fraction that also have this theme
+        with_rel = sum(1 for s in play_signatures if s["dominantRelation"] == rt)
+        confidence = v / with_rel if with_rel else 0
+        rules.append({
+            "id": f"R{idx}",
+            "title": f"{rt} ⇒ {th}",
+            "support": round(support, 4),
+            "confidence": round(confidence, 4),
+            "description": f"{rt}主导的剧本中，常以「{th}」为核心主题",
+            "samples": [s["playId"] for s in play_signatures
+                        if s["dominantRelation"] == rt and s["topTheme"] == th][:5],
+        })
+
+    return {
+        "sankeyNodes": sankey_nodes,
+        "sankeyLinks": sankey_links,
+        "matrix": matrix,
+        "clusters": clusters,
+        "rules": rules,
+    }
+
+
+# ===========================================================
+# /api/plays/:playId
+# ===========================================================
+@app.get("/api/plays/{play_id}")
+def get_play_detail(play_id: str):
+    p = PLAY_BY_ID.get(play_id)
+    if not p:
+        raise HTTPException(status_code=404, detail=f"play {play_id} not found")
+
+    chars = CHARS_BY_PLAY.get(play_id, [])
+    themes_p = sorted(THEMES_BY_PLAY.get(play_id, []), key=lambda t: -t.get("weight", 0))
+    tensions_p = sorted(TENSIONS_BY_PLAY.get(play_id, []), key=lambda t: t["sceneNum"])
+
+    # Lightweight character list for detail page
+    char_list = []
+    for c in chars[:50]:
+        related = [e["targetName"] if e["source"] == c["id"] else e["sourceName"]
+                   for e in REL_EDGES
+                   if e["playId"] == play_id and (e["source"] == c["id"] or e["target"] == c["id"])]
+        related = list(dict.fromkeys(related))[:5]
+        char_list.append({
+            "id": c["id"],
+            "name": c["name"],
+            "roleSubtype": c.get("roleSubtype", "") or c.get("roleMain", ""),
+            "identity": c.get("identity", ""),
+            "relationHint": "、".join(related) if related else "",
+        })
+
+    # Evidence: take 6 most interesting lines from main characters
+    evidence = []
+    for c in chars:
+        if not c.get("isMainCharacter"):
+            continue
+        for i, ev in enumerate(c.get("evidence", [])[:2]):
+            evidence.append({
+                "id": f"{c['id']}_{i}",
+                "type": "唱念",
+                "speaker": c["name"],
+                "text": ev,
+            })
+        if len(evidence) >= 6:
+            break
+
+    return {
+        "play": {
+            "id": p["id"],
+            "title": p["title"],
+            "period": p.get("period", ""),
+            "genre": p.get("genre", ""),
+            "authorEra": p.get("authorEra", ""),
+            "sceneCount": p.get("sceneCount", 0),
+            "narrativePattern": p.get("narrativePattern", ""),
+            "summary": p.get("summary", ""),
+        },
+        "characters": char_list,
+        "themes": [{"theme": t["theme"], "weight": t["weight"]} for t in themes_p[:10]],
+        "narrative": [{"scene": t["scene"], "tension": t["tension"]} for t in tensions_p],
+        "evidence": evidence,
+    }
+
+
+@app.get("/health")
+def health():
+    return {"ok": True, "plays": len(PLAYS), "chars": len(CHARS),
+            "edges": len(REL_EDGES), "themes": len(THEMES_RECORDS)}
