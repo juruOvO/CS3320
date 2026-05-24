@@ -1,0 +1,11 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/roles", "destination": "/index.html" },
+    { "source": "/relations", "destination": "/index.html" },
+    { "source": "/themes", "destination": "/index.html" },
+    { "source": "/narratives", "destination": "/index.html" },
+    { "source": "/associations", "destination": "/index.html" },
+    { "source": "/plays/(.*)", "destination": "/index.html" }
+  ]
+}
