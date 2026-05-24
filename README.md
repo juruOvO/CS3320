@@ -2,6 +2,58 @@
 
 基于 1063 部京剧/昆曲剧本的可视分析系统。涵盖角色行当、关系网络、主题、叙事结构与综合关联五大分析维度。
 
+## 🚀 快速开始（队员看这里）
+
+**前置**：装好 `Node.js 18+` 和 `Python 3.10+`。
+
+### 1. 拉代码并装依赖
+
+```bash
+git clone https://github.com/juruOvO/CS3320.git
+cd CS3320
+npm install
+pip install fastapi uvicorn
+```
+
+### 2. 在项目根目录新建 `.env.local`，写入两行
+
+```
+VITE_USE_MOCK=false
+VITE_API_BASE_URL=http://127.0.0.1:8000/api
+```
+
+> 不创建也能跑，但前端会显示假数据（mock），不是真分析结果。
+
+### 3. 开两个终端,分别启动
+
+**终端 A（后端 FastAPI）：**
+```bash
+python -m uvicorn server.main:app --host 127.0.0.1 --port 8000 --reload
+```
+起来后访问 `http://127.0.0.1:8000/health`，看到 `{"ok":true,"plays":1063,...}` 即成功。
+
+**终端 B（前端 Vite）：**
+```bash
+npm run dev
+```
+
+### 4. 浏览器打开
+
+```
+http://localhost:5173
+```
+
+### 常见问题
+
+| 现象 | 解决 |
+| --- | --- |
+| `No module named 'fastapi'` | `pip install fastapi uvicorn` |
+| `data/plays.json not found` | `git pull` 拉最新（data/ 32MB 已入库） |
+| 前端打开但是是 mock 数据 | 检查 `.env.local` 是否在项目根、内容是否正确，重启 `npm run dev` |
+| 端口被占 | 改 uvicorn 的 `--port`，同时改 `.env.local` 里 URL |
+
+---
+
 ## 系统架构
 
 ```
