@@ -1,7 +1,5 @@
 # 戏曲文本可视化系统
 
-前端原型项目，基于 `Vite + React + TypeScript`。
-
 ## 运行前准备
 
 需要提前安装：
@@ -27,7 +25,7 @@ npm -v
 运行：
 
 ```bash
-git clone <你的仓库地址>
+git clone https://github.com/juruOvO/CS3320.git
 cd CS3320
 npm install
 npm run dev
@@ -49,7 +47,7 @@ http://localhost:4173/
 运行：
 
 ```bash
-git clone <你的仓库地址>
+git clone https://github.com/juruOvO/CS3320.git
 cd CS3320
 npm install
 npm run dev
@@ -68,7 +66,7 @@ http://localhost:4173/
 运行：
 
 ```bash
-git clone <你的仓库地址>
+git clone https://github.com/juruOvO/CS3320.git
 cd CS3320
 npm install
 npm run dev
