@@ -11,14 +11,14 @@ describe('App prototype', () => {
     window.history.pushState({}, '', '/')
   })
 
-  it('renders overview page content', async () => {
+  it('renders dashboard page content', async () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText('从课程要求到展示原型的全局总览')).toBeInTheDocument()
+      expect(screen.getByText('任务切换')).toBeInTheDocument()
     })
 
-    expect(screen.getByText('戏曲剧本多维分析平台')).toBeInTheDocument()
-    expect(screen.getByText('前后端接口暴露')).toBeInTheDocument()
+    expect(screen.getByText('戏曲文本分析看板')).toBeInTheDocument()
+    expect(screen.getByText('样本分布图')).toBeInTheDocument()
   })
 })

@@ -5,7 +5,6 @@ import {
   getFilterOptions,
   getNarratives,
   getOverview,
-  getPlayDetail,
   getRelations,
   getThemes,
 } from './mockService'
@@ -16,7 +15,6 @@ import type {
   GlobalFilters,
   NarrativeResponse,
   OverviewResponse,
-  PlayDetailResponse,
   RelationNetworkResponse,
   ThemeResponse,
 } from './types'
@@ -54,7 +52,4 @@ export const apiClient = {
 
   getAssociations: (filters: GlobalFilters): Promise<AssociationResponse> =>
     useMock ? getAssociations(filters) : getRemote('/associations', filters),
-
-  getPlayDetail: (playId: string): Promise<PlayDetailResponse> =>
-    useMock ? getPlayDetail(playId) : getRemote(`/plays/${playId}`),
 }

@@ -150,12 +150,16 @@ def filter_play_ids(filters: dict) -> set[str]:
         if theme_ids is not None and p["id"] not in theme_ids:
             continue
         out_ids.add(p["id"])
-    if filters["characterId"]:
-        c = CHARS_BY_ID.get(filters["characterId"])
-        if c:
-            out_ids = {c["playId"]} if not out_ids else (out_ids & {c["playId"]})
-        else:
-            out_ids = set()
+
+    if filters["roleType"] or filters["characterId"]:
+        matching_char_play_ids = {
+            c["playId"]
+            for c in CHARS
+            if (not filters["roleType"] or c.get("roleMain") == filters["roleType"])
+            and (not filters["characterId"] or c["id"] == filters["characterId"])
+        }
+        out_ids &= matching_char_play_ids
+
     return out_ids
 
 
@@ -170,6 +174,30 @@ def filter_chars(filters: dict, play_ids: set[str]) -> list[dict]:
             continue
         out.append(c)
     return out
+
+
+def build_theme_sunburst(profiles: list[dict]) -> dict[str, Any]:
+    genre_theme_counter: dict[str, Counter] = defaultdict(Counter)
+
+    for profile in profiles:
+        play_meta = PLAY_BY_ID.get(profile["playId"], {})
+        genre = play_meta.get("genre") or "其他"
+        for theme_name in profile.get("topThemes", []):
+            genre_theme_counter[genre][theme_name] += 1
+
+    return {
+        "name": "京剧主题",
+        "children": [
+            {
+                "name": genre,
+                "children": [
+                    {"name": theme_name, "value": value}
+                    for theme_name, value in theme_counter.most_common()
+                ],
+            }
+            for genre, theme_counter in sorted(genre_theme_counter.items(), key=lambda item: item[0])
+        ],
+    }
 
 
 # ===========================================================
@@ -419,9 +447,14 @@ def get_relations(
     if filters["roleType"]:
         keep_node_ids = {n["id"] for n in nodes if n.get("roleType") == filters["roleType"]}
         nodes = [n for n in nodes if n["id"] in keep_node_ids]
-        edges = [e for e in edges if e["source"] in keep_node_ids or e["target"] in keep_node_ids]
+        edges = [e for e in edges if e["source"] in keep_node_ids and e["target"] in keep_node_ids]
     if filters["characterId"]:
         edges = [e for e in edges if e["source"] == filters["characterId"] or e["target"] == filters["characterId"]]
+        keep_node_ids = {filters["characterId"]}
+        for edge in edges:
+            keep_node_ids.add(edge["source"])
+            keep_node_ids.add(edge["target"])
+        nodes = [n for n in nodes if n["id"] in keep_node_ids]
 
     # When no playId narrows the request, the graph is huge (~14k nodes / 49k edges).
     # Force-directed rendering chokes — return a top-N node subgraph instead.
@@ -535,7 +568,7 @@ def get_themes(
         combos[tuple(sorted(set(themes_pp)))] += 1
 
     return {
-        "sunburst": THEMES.get("sunburst", {"name": "京剧主题", "children": []}),
+        "sunburst": build_theme_sunburst(profiles),
         "cooccurrenceNodes": [{"id": th, "value": cnt} for th, cnt in theme_count.most_common()],
         "cooccurrenceLinks": [
             {"source": a, "target": b, "value": v}

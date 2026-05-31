@@ -7,7 +7,6 @@ import type {
   GlobalFilters,
   NarrativeResponse,
   OverviewResponse,
-  PlayDetailResponse,
   PlayRecord,
   RelationNetworkResponse,
   ThemeResponse,
@@ -514,40 +513,5 @@ export async function getAssociations(filters: GlobalFilters): Promise<Associati
     matrix,
     clusters,
     rules,
-  }
-}
-
-export async function getPlayDetail(playId: string): Promise<PlayDetailResponse> {
-  await wait()
-  const play = plays.find((item) => item.id === playId) ?? plays[0]
-  const playCharacters = characters.filter((character) => character.playId === play.id)
-  const playRelations = relations.filter((relation) => relation.playId === play.id)
-  const playThemes = themes.filter((theme) => theme.playId === play.id)
-  const playNarrative = narrativeSegments
-    .filter((segment) => segment.playId === play.id)
-    .map((segment) => ({ scene: segment.scene, tension: segment.tension }))
-
-  return {
-    play,
-    characters: playCharacters.map((character) => ({
-      id: character.id,
-      name: character.name,
-      roleSubtype: character.roleSubtype,
-      identity: character.identity,
-      relationHint:
-        playRelations.find(
-          (relation) => relation.source === character.id || relation.target === character.id,
-        )?.relationType ?? '独立行动',
-    })),
-    themes: playThemes.map((theme) => ({ theme: theme.theme, weight: theme.weight })),
-    narrative: playNarrative,
-    evidence: playCharacters.flatMap((character, index) =>
-      character.evidence.slice(0, 2).map((text, evidenceIndex) => ({
-        id: `${character.id}-${evidenceIndex}`,
-        type: index % 2 === 0 ? '台词提示' : '表演提示',
-        speaker: character.name,
-        text,
-      })),
-    ),
   }
 }

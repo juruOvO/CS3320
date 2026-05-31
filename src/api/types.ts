@@ -130,14 +130,15 @@ export interface AssociationResponse {
   sankeyNodes: Array<{ name: string; category: string }>
   sankeyLinks: Array<{ source: string; target: string; value: number }>
   matrix: Array<{ relationFeature: string; targetFeature: string; value: number }>
-  clusters: Array<{ playId: string; title: string; genre: string; x: number; y: number; pattern: string }>
+  clusters: Array<{
+    playId: string
+    title: string
+    genre: string
+    x: number
+    y: number
+    pattern: string
+    topTheme?: string
+    dominantRelation?: string
+  }>
   rules: Array<{ id: string; title: string; support: number; confidence: number; description: string; samples: string[] }>
-}
-
-export interface PlayDetailResponse {
-  play: PlayRecord
-  characters: Array<{ id: string; name: string; roleSubtype: string; identity: string; relationHint: string }>
-  themes: Array<{ theme: string; weight: number }>
-  narrative: Array<{ scene: string; tension: number }>
-  evidence: Array<{ id: string; type: string; speaker?: string; text: string }>
 }

@@ -45,6 +45,7 @@ type OverviewSeries = {
 
 type SankeyNode = {
   name: string
+  label: string
   category: string
   value: number
   tokens: string[]
@@ -53,6 +54,7 @@ type SankeyNode = {
 type SankeyLink = {
   source: string
   target: string
+  label?: string
   value: number
   tokens: string[]
 }
@@ -86,7 +88,8 @@ type HeatmapCell = {
 
 type LineSeries = {
   name: string
-  data: Array<{ x: string; value: number; tokens: string[] }>
+  group?: string
+  data: Array<{ x: string; value: number | null; tokens: string[] }>
 }
 
 type ScatterPoint = {
@@ -96,6 +99,9 @@ type ScatterPoint = {
   y: number
   size: number
   category: string
+  genre: string
+  topTheme?: string
+  dominantRelation?: string
   tokens: string[]
 }
 
@@ -260,7 +266,7 @@ export default function DashboardPage() {
                 if (!point || point.tokens.length === 0) return
                 setInteraction({
                   chartId: 'roles',
-                  label: point.source && point.target ? `${point.source} → ${point.target}` : point.label ?? '角色与行当',
+                  label: point.label ?? '角色与行当',
                   tokens: point.tokens,
                 })
               },
@@ -390,20 +396,41 @@ function buildOverviewChart(data: OverviewResponse) {
 }
 
 function buildRolesChart(data: CharacterRoleResponse) {
+  const sourceNames = new Set(data.sankeyLinks.map((link) => link.source))
+  const targetNames = new Set(data.sankeyLinks.map((link) => link.target))
+  const roleNames = new Set([...targetNames].filter((name) => !sourceNames.has(name)))
+  const ageNames = new Set([...sourceNames].filter((name) => targetNames.has(name)))
+
+  const getNodeId = (layer: 'source' | 'middle' | 'target', label: string) => `${layer}:${label}`
+  const getNodeLabel = (nodeId: string) => nodeId.split(':').slice(1).join(':')
   const roleWeights = buildNodeWeightMap(
-    data.sankeyLinks.map((link) => ({ source: link.source, target: link.target, value: link.value })),
+    data.sankeyLinks.map((link) => {
+      const isRoleLink = roleNames.has(link.target)
+      return {
+        source: getNodeId(isRoleLink ? 'middle' : 'source', link.source),
+        target: getNodeId(isRoleLink ? 'target' : 'middle', link.target),
+        value: link.value,
+      }
+    }),
   )
 
   const nodeTokens = new Map<string, string[]>()
   const edgeTokens = new Map<string, string[]>()
+  const registerNode = (nodeId: string) => {
+    if (nodeTokens.has(nodeId)) return
+    nodeTokens.set(nodeId, collectRoleTokensForName(getNodeLabel(nodeId), data.characters))
+  }
 
-  data.sankeyNodes.forEach((node) => {
-    nodeTokens.set(node.name, collectRoleTokensForName(node.name, data.characters))
-  })
+  const links = data.sankeyLinks.map((link) => {
+    const isRoleLink = roleNames.has(link.target)
+    const source = getNodeId(isRoleLink ? 'middle' : 'source', link.source)
+    const target = getNodeId(isRoleLink ? 'target' : 'middle', link.target)
+    const label = `${link.source} → ${link.target}`
 
-  data.sankeyLinks.forEach((link) => {
+    registerNode(source)
+    registerNode(target)
     edgeTokens.set(
-      `${link.source}=>${link.target}`,
+      `${source}=>${target}`,
       uniqueTokens(
         data.characters
           .filter(
@@ -412,22 +439,28 @@ function buildRolesChart(data: CharacterRoleResponse) {
           .flatMap(buildCharacterTokens),
       ),
     )
+
+    return {
+      source,
+      target,
+      label,
+      value: link.value,
+      tokens: edgeTokens.get(`${source}=>${target}`) ?? uniqueTokens([`role:${link.target}`]),
+    }
   })
 
-  return compactLeftSankeyNodes({
-    nodes: data.sankeyNodes.map((node) => ({
-      name: node.name,
-      category: node.category,
-      value: roleWeights.get(node.name) ?? 1,
-      tokens: nodeTokens.get(node.name) ?? [],
-    })),
-    links: data.sankeyLinks.map((link) => ({
-      source: link.source,
-      target: link.target,
-      value: link.value,
-      tokens: edgeTokens.get(`${link.source}=>${link.target}`) ?? uniqueTokens([`role:${link.target}`]),
-    })),
+  const nodes = unique(links.flatMap((link) => [link.source, link.target])).map((nodeId) => {
+    const category = nodeId.startsWith('source:') ? '性别' : nodeId.startsWith('middle:') ? '年龄' : '行当'
+    return {
+      name: nodeId,
+      label: getNodeLabel(nodeId),
+      category,
+      value: roleWeights.get(nodeId) ?? 1,
+      tokens: nodeTokens.get(nodeId) ?? [],
+    }
   })
+
+  return compactLeftSankeyNodes({ nodes, links })
 }
 
 function buildRelationsChart(data: RelationNetworkResponse) {
@@ -482,19 +515,21 @@ function buildThemesChart(data: ThemeResponse) {
 }
 
 function buildNarrativesChart(data: NarrativeResponse) {
-  const xLabels = unique(data.tensionSeries.map((item) => item.scene))
-  const playTitles = new Map(data.patternClusters.map((item) => [item.playId, item.title]))
+  const xLabels = unique(data.tensionSeries.map((item) => item.scene)).sort((a, b) => getSceneOrder(a) - getSceneOrder(b))
+  const playMeta = new Map(data.patternClusters.map((item) => [item.playId, item]))
   const playIds = unique(data.tensionSeries.map((item) => item.playId))
+  const pointMap = new Map(data.tensionSeries.map((item) => [`${item.playId}::${item.scene}`, item]))
 
   return {
     xLabels,
     series: playIds.map((playId) => ({
-      name: playTitles.get(playId) ?? playId,
+      name: playMeta.get(playId)?.title ?? playId,
+      group: playMeta.get(playId)?.pattern ?? '未分类',
       data: xLabels.map((scene) => {
-        const point = data.tensionSeries.find((item) => item.playId === playId && item.scene === scene)
+        const point = pointMap.get(`${playId}::${scene}`)
         return {
           x: scene,
-          value: point?.tension ?? 0,
+          value: point?.tension ?? null,
           tokens: uniqueTokens([`play:${playId}`, `scene:${scene}`]),
         }
       }),
@@ -511,6 +546,9 @@ function buildAssociationsChart(data: AssociationResponse) {
       y: item.y,
       size: 18,
       category: item.pattern,
+      genre: item.genre,
+      topTheme: item.topTheme,
+      dominantRelation: item.dominantRelation,
       tokens: uniqueTokens([`play:${item.playId}`, `pattern:${item.pattern}`, `genre:${item.genre}`]),
     })),
   }
@@ -560,10 +598,12 @@ function createSankeyOption(payload: { nodes: SankeyNode[]; links: SankeyLink[] 
           fontSize: 11,
           width: 88,
           overflow: 'truncate',
+          formatter: (params: { data?: { label?: string }; name?: string }) => params.data?.label ?? params.name ?? '',
         },
         lineStyle: { color: 'gradient', curveness: 0.45 },
         data: payload.nodes.map((node) => ({
           name: node.name,
+          label: node.label,
           value: node.value,
           category: node.category,
           tokens: node.tokens,
@@ -571,6 +611,7 @@ function createSankeyOption(payload: { nodes: SankeyNode[]; links: SankeyLink[] 
         links: payload.links.map((link) => ({
           source: link.source,
           target: link.target,
+          label: link.label,
           value: link.value,
           tokens: link.tokens,
         })),
@@ -649,21 +690,52 @@ function createHeatmapOption(payload: {
 }
 
 function createLineOption(payload: { xLabels: string[]; series: LineSeries[] }) {
+  const normalizedPayload =
+    payload.series.length > 12
+      ? aggregateNormalizedLineSeriesByGroup(payload.series)
+      : { xLabels: payload.xLabels, series: pickRepresentativeLineSeries(payload.series, 6) }
+  const displayedSeries = normalizedPayload.series
+  const valueRange = getLineValueRange(displayedSeries)
   return {
     color: chartPalette,
     tooltip: { ...tooltipStyle, trigger: 'axis' },
-    legend: { bottom: 0, textStyle: { color: '#6b6259' } },
+    legend:
+      displayedSeries.length <= 8
+        ? { bottom: 0, textStyle: { color: '#6b6259' } }
+        : { show: false },
     grid: commonGrid,
-    xAxis: { type: 'category', data: payload.xLabels, ...axisStyle },
-    yAxis: { type: 'value', ...axisStyle },
-    series: payload.series.map((series) => ({
+    xAxis: { type: 'category', data: normalizedPayload.xLabels, ...axisStyle },
+    yAxis: {
+      type: 'value',
+      scale: true,
+      min: valueRange.min,
+      max: valueRange.max,
+      axisLabel: {
+        color: '#6b6259',
+        fontSize: 11,
+        formatter: (value: number) => value.toFixed(2),
+      },
+      splitLine: axisStyle.splitLine,
+      axisLine: axisStyle.axisLine,
+    },
+    dataZoom:
+      normalizedPayload.xLabels.length > 12
+        ? [
+            { type: 'inside', start: 0, end: 45 },
+            { type: 'slider', bottom: displayedSeries.length <= 8 ? 34 : 6, start: 0, end: 45, height: 18 },
+          ]
+        : undefined,
+    series: displayedSeries.map((series, index) => ({
       name: series.name,
       type: 'line',
       smooth: true,
-      data: payload.xLabels.map((label) => {
+      showSymbol: false,
+      connectNulls: true,
+      lineStyle: { width: index < 4 ? 2.6 : 1.7, opacity: index < 4 ? 0.92 : 0.58 },
+      data: normalizedPayload.xLabels.map((label) => {
         const point = series.data.find((item) => item.x === label)
         return {
-          value: point?.value ?? 0,
+          value: point?.value ?? null,
           tokens: point?.tokens ?? [],
           label: `${series.name} · ${label}`,
         }
@@ -673,9 +745,36 @@ function createLineOption(payload: { xLabels: string[]; series: LineSeries[] }) 
 }
 
 function createScatterOption(payload: { points: ScatterPoint[] }) {
+  const highlightPoints = pickHighlightedScatterPoints(payload.points, 18)
+  const showAllLabels = payload.points.length <= 36
   return {
     color: chartPalette,
-    tooltip: tooltipStyle,
+    tooltip: {
+      ...tooltipStyle,
+      trigger: 'item',
+      formatter: (params: {
+        data?: {
+          label?: string
+          genre?: string
+          category?: string
+          topTheme?: string
+          dominantRelation?: string
+          value?: number[]
+        }
+      }) => {
+        const point = params.data
+        if (!point) return ''
+        const [x, y] = point.value ?? []
+        return [
+          `<div style="font-weight:600;margin-bottom:6px;">${point.label ?? '未命名剧目'}</div>`,
+          `<div>剧类：${point.genre ?? '未知'}</div>`,
+          `<div>叙事模式：${point.category ?? '未知'}</div>`,
+          `<div>主导关系：${point.dominantRelation ?? '未知'}</div>`,
+          `<div>核心主题：${point.topTheme ?? '未知'}</div>`,
+          `<div>坐标：${formatNumber(x)} / ${formatNumber(y)}</div>`,
+        ].join('')
+      },
+    },
     grid: commonGrid,
     xAxis: { type: 'value', name: '关系复杂度', ...axisStyle },
     yAxis: { type: 'value', name: '主题-叙事耦合度', ...axisStyle },
@@ -685,16 +784,55 @@ function createScatterOption(payload: { points: ScatterPoint[] }) {
         data: payload.points.map((point) => ({
           value: [point.x, point.y],
           label: point.label,
+          genre: point.genre,
+          category: point.category,
+          topTheme: point.topTheme,
+          dominantRelation: point.dominantRelation,
           tokens: point.tokens,
-          symbolSize: point.size,
+          symbolSize: payload.points.length > 160 ? Math.max(8, point.size - 8) : point.size,
         })),
+        itemStyle: { opacity: showAllLabels ? 0.78 : 0.32 },
         label: {
-          show: true,
+          show: showAllLabels,
           formatter: (params: { data: { label?: string } }) => String(params.data.label ?? ''),
           position: 'top',
           color: '#6b6259',
         },
+        emphasis: {
+          scale: true,
+          itemStyle: { opacity: 1, borderColor: '#8C1D18', borderWidth: 2 },
+          label: {
+            show: true,
+            formatter: (params: { data: { label?: string } }) => String(params.data.label ?? ''),
+            position: 'top',
+            color: '#433b34',
+          },
+        },
       },
+      ...(showAllLabels
+        ? []
+        : [
+            {
+              type: 'scatter',
+              data: highlightPoints.map((point) => ({
+                value: [point.x, point.y],
+                label: point.label,
+                genre: point.genre,
+                category: point.category,
+                topTheme: point.topTheme,
+                dominantRelation: point.dominantRelation,
+                tokens: point.tokens,
+                symbolSize: Math.max(point.size, 16),
+              })),
+              itemStyle: { opacity: 0.88 },
+              label: {
+                show: true,
+                formatter: (params: { data: { label?: string } }) => String(params.data.label ?? ''),
+                position: 'top',
+                color: '#6b6259',
+              },
+            },
+          ]),
     ],
   }
 }
@@ -844,6 +982,7 @@ function compactLeftSankeyNodes(data: CompactSankeyData): CompactSankeyData {
       hiddenNodes.forEach((node) => hiddenMap.set(node.name, { aggregateName, category }))
       compactNodes.push({
         name: aggregateName,
+        label: `${category}其他`,
         category,
         value: hiddenNodes.reduce((sum, node) => sum + node.value, 0),
         tokens: uniqueTokens(hiddenNodes.flatMap((node) => node.tokens)),
@@ -871,6 +1010,7 @@ function compactLeftSankeyNodes(data: CompactSankeyData): CompactSankeyData {
     mergedLinks.set(key, {
       source: nextSource,
       target: link.target,
+      label: link.label,
       value: link.value,
       tokens: [...link.tokens],
     })
@@ -912,6 +1052,156 @@ function unique<T>(items: T[]) {
 
 function uniqueTokens(tokens: string[]) {
   return unique(tokens.filter(Boolean))
+}
+
+function getSceneOrder(scene: string) {
+  const matched = scene.match(/\d+/)
+  return matched ? Number(matched[0]) : Number.MAX_SAFE_INTEGER
+}
+
+function pickRepresentativeLineSeries(series: LineSeries[], maxSeries: number) {
+  if (series.length <= maxSeries) return series
+
+  const scoredSeries = [...series]
+    .map((item) => ({ item, score: scoreLineSeries(item) }))
+    .sort((a, b) => b.score - a.score)
+
+  const selectedByGroup = new Map<string, { item: LineSeries; score: number }>()
+  scoredSeries.forEach((entry) => {
+    const group = entry.item.group ?? entry.item.name
+    if (!selectedByGroup.has(group)) {
+      selectedByGroup.set(group, entry)
+    }
+  })
+
+  const selected = [...selectedByGroup.values()]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, maxSeries)
+
+  if (selected.length < maxSeries) {
+    const usedNames = new Set(selected.map((entry) => entry.item.name))
+    scoredSeries.forEach((entry) => {
+      if (selected.length >= maxSeries || usedNames.has(entry.item.name)) return
+      selected.push(entry)
+      usedNames.add(entry.item.name)
+    })
+  }
+
+  return selected.map(({ item }) => item)
+}
+
+function aggregateNormalizedLineSeriesByGroup(series: LineSeries[]) {
+  const normalizedAxis = buildNormalizedAxis(11)
+  const groupedSeries = groupBy(series, (item) => item.group ?? '未分类')
+
+  const aggregatedSeries = [...groupedSeries.entries()]
+    .map(([group, groupSeries]) => ({
+      name: `${group}平均趋势`,
+      group,
+      data: normalizedAxis.map((axisPoint) => {
+        const sampledPoints = groupSeries
+          .map((item) => sampleLineSeriesAtPosition(item, axisPoint.position))
+          .filter((point): point is { value: number; tokens: string[] } => point !== null)
+
+        return {
+          x: axisPoint.label,
+          value:
+            sampledPoints.length > 0
+              ? Number((sampledPoints.reduce((sum, point) => sum + point.value, 0) / sampledPoints.length).toFixed(3))
+              : null,
+          tokens: uniqueTokens(sampledPoints.flatMap((point) => point.tokens)),
+        }
+      }),
+    }))
+    .sort((a, b) => scoreLineSeries(b) - scoreLineSeries(a))
+
+  return {
+    xLabels: normalizedAxis.map((item) => item.label),
+    series: aggregatedSeries,
+  }
+}
+
+function buildNormalizedAxis(stepCount: number) {
+  return Array.from({ length: stepCount }, (_, index) => {
+    const position = stepCount === 1 ? 0 : index / (stepCount - 1)
+    return {
+      position,
+      label: `${Math.round(position * 100)}%`,
+    }
+  })
+}
+
+function sampleLineSeriesAtPosition(series: LineSeries, position: number) {
+  const points = series.data.filter((point): point is { x: string; value: number; tokens: string[] } => point.value !== null)
+  if (points.length === 0) return null
+  if (points.length === 1) {
+    return { value: points[0].value, tokens: points[0].tokens }
+  }
+
+  const scaledIndex = position * (points.length - 1)
+  const leftIndex = Math.floor(scaledIndex)
+  const rightIndex = Math.min(Math.ceil(scaledIndex), points.length - 1)
+  const leftPoint = points[leftIndex]
+  const rightPoint = points[rightIndex]
+
+  if (!leftPoint || !rightPoint) return null
+  if (leftIndex === rightIndex) {
+    return { value: leftPoint.value, tokens: uniqueTokens([...leftPoint.tokens, ...rightPoint.tokens]) }
+  }
+
+  const ratio = scaledIndex - leftIndex
+  return {
+    value: Number((leftPoint.value + (rightPoint.value - leftPoint.value) * ratio).toFixed(3)),
+    tokens: uniqueTokens([...leftPoint.tokens, ...rightPoint.tokens]),
+  }
+}
+
+function pickHighlightedScatterPoints(points: ScatterPoint[], maxLabels: number) {
+  if (points.length <= maxLabels) return points
+
+  const centerX = points.reduce((sum, point) => sum + point.x, 0) / points.length
+  const centerY = points.reduce((sum, point) => sum + point.y, 0) / points.length
+
+  return [...points]
+    .map((point) => {
+      const distance = Math.hypot(point.x - centerX, point.y - centerY)
+      const score = distance + point.size * 0.6
+      return { point, score }
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, maxLabels)
+    .map(({ point }) => point)
+}
+
+function scoreLineSeries(series: LineSeries) {
+  const values = series.data.map((point) => point.value).filter((value): value is number => value !== null)
+  const peak = values.length > 0 ? Math.max(...values) : 0
+  const trough = values.length > 0 ? Math.min(...values) : 0
+  const variation = values.length > 1 ? values.slice(1).reduce((sum, value, index) => sum + Math.abs(value - values[index]), 0) : 0
+  return values.length * 10 + peak * 12 + (peak - trough) * 8 + variation * 4
+}
+
+function getLineValueRange(series: LineSeries[]) {
+  const values = series.flatMap((item) => item.data.map((point) => point.value).filter((value): value is number => value !== null))
+  if (values.length === 0) {
+    return { min: 0, max: 1 }
+  }
+
+  const rawMin = Math.min(...values)
+  const rawMax = Math.max(...values)
+  const span = rawMax - rawMin
+  const visibleSpan = Math.max(span, 0.035)
+  const padding = visibleSpan * 0.18
+
+  return {
+    min: Math.max(0, Number((rawMin - padding).toFixed(3))),
+    max: Math.min(1, Number((rawMax + padding).toFixed(3))),
+  }
+}
+
+function formatNumber(value: number | undefined) {
+  if (typeof value !== 'number' || Number.isNaN(value)) return '-'
+  return value.toFixed(1)
 }
 
 function groupBy<T>(items: T[], getKey: (item: T) => string) {
