@@ -2,46 +2,53 @@
 
 基于 1063 部京剧/昆曲剧本的可视分析系统。涵盖角色行当、关系网络、主题、叙事结构与综合关联五大分析维度。
 
-## 🚀 快速开始（队员看这里）
+## 🚀 快速开始
 
-**前置**：装好 `Node.js 18+` 和 `Python 3.10+`。
-
-### 1. 拉代码并装依赖
+**前置**：装好 `Node.js 18+` 和 `Python 3.10+`，然后 clone 仓库：
 
 ```bash
 git clone https://github.com/juruOvO/CS3320.git
 cd CS3320
-npm install
-pip install fastapi uvicorn
 ```
 
-### 2. 在项目根目录新建 `.env.local`，写入两行
+### 方式一：一键启动（Windows，推荐）
+
+**双击项目根目录的 `start.bat`** 即可。它会自动：
+
+1. 检查并安装依赖（首次会 `pip install` + `npm install`，较慢）
+2. 启动后端（FastAPI，端口 8000）和前端（Vite，端口 **5180**），各弹一个窗口
+3. 等服务就绪后自动打开浏览器 `http://localhost:5180`
+
+> 重复双击是安全的：已在运行的服务会自动跳过，不会报端口占用。
+> 停止服务：关闭弹出的「后端」「前端」两个窗口即可。
+
+### 方式二：手动启动（macOS / Linux / 想看日志）
+
+先建 `.env.local`（让前端连真后端，不创建则显示 mock 假数据）：
 
 ```
 VITE_USE_MOCK=false
 VITE_API_BASE_URL=http://127.0.0.1:8000/api
 ```
 
-> 不创建也能跑，但前端会显示假数据（mock），不是真分析结果。
+装依赖：
 
-### 3. 开两个终端,分别启动
-
-**终端 A（后端 FastAPI）：**
 ```bash
-python -m uvicorn server.main:app --host 127.0.0.1 --port 8000 --reload
+npm install
+pip install fastapi uvicorn
 ```
-起来后访问 `http://127.0.0.1:8000/health`，看到 `{"ok":true,"plays":1063,...}` 即成功。
 
-**终端 B（前端 Vite）：**
+开两个终端分别启动：
+
 ```bash
+# 终端 A — 后端
+python -m uvicorn server.main:app --host 127.0.0.1 --port 8000
+
+# 终端 B — 前端
 npm run dev
 ```
 
-### 4. 浏览器打开
-
-```
-http://localhost:5173
-```
+浏览器打开 **http://localhost:5180**。后端健康检查：`http://127.0.0.1:8000/health`。
 
 ### 常见问题
 
@@ -49,8 +56,8 @@ http://localhost:5173
 | --- | --- |
 | `No module named 'fastapi'` | `pip install fastapi uvicorn` |
 | `data/plays.json not found` | `git pull` 拉最新（data/ 32MB 已入库） |
-| 前端打开但是是 mock 数据 | 检查 `.env.local` 是否在项目根、内容是否正确，重启 `npm run dev` |
-| 端口被占 | 改 uvicorn 的 `--port`，同时改 `.env.local` 里 URL |
+| 前端打开但是 mock 数据 | 检查 `.env.local` 是否在项目根、内容正确，重启前端 |
+| 5180 被占 | 改 `vite.config.ts` 里 `server.port`；后端端口冲突则改 uvicorn `--port` 并同步 `.env.local` |
 
 ---
 
@@ -58,7 +65,7 @@ http://localhost:5173
 
 ```
 [ React + Vite 前端 ]  →  [ FastAPI 后端 ]  →  data/*.json
-       5173                    8000             (32MB 派生数据)
+       5180                    8000             (32MB 派生数据)
 ```
 
 - **前端**：React 18 + TypeScript + Vite + Tailwind + ECharts，6 个分析页面 + 单剧详情
@@ -113,7 +120,7 @@ npm run dev
 浏览器打开：
 
 ```
-http://localhost:5173/
+http://localhost:5180/
 ```
 
 ## 前端：mock 数据 vs 真后端
@@ -165,13 +172,15 @@ npm run build      # 产物在 dist/
 预览构建产物：
 
 ```bash
-npm run preview    # http://localhost:4173/
+npm run preview    # http://localhost:5180/
 ```
 
 ## 项目结构
 
 ```
 .
+├── start.bat                 # 一键启动（双击，Windows）
+├── start.ps1                 # 启动逻辑（被 start.bat 调用）
 ├── src/                      # 前端 React 代码
 ├── server/main.py            # FastAPI 后端
 ├── scripts/                  # 数据派生脚本
