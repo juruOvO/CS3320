@@ -89,6 +89,7 @@ type HeatmapCell = {
 type LineSeries = {
   name: string
   group?: string
+  isFocus?: boolean
   data: Array<{ x: string; value: number | null; tokens: string[] }>
 }
 
@@ -102,6 +103,7 @@ type ScatterPoint = {
   genre: string
   topTheme?: string
   dominantRelation?: string
+  isFocus?: boolean
   tokens: string[]
 }
 
@@ -317,7 +319,11 @@ export default function DashboardPage() {
         <ChartSlot chartId="narratives" activeTask={activeTask}>
           <ChartPanel
             title={chartTitles.narratives}
-            subtitle="按剧情进度（0→100%）对照各剧目叙事张力的起伏。"
+            subtitle={
+              filters.playId
+                ? '高亮所选剧目，叠加同叙事模式的剧目作背景对照。'
+                : '按剧情进度（0→100%）对照各剧目叙事张力的起伏。'
+            }
             option={createLineOption(narrativesPayload)}
             height={380}
             onEvents={{
@@ -535,7 +541,10 @@ function buildNarrativesChart(data: NarrativeResponse) {
   const STEPS = 11 // 0%, 10%, … 100% — every play is resampled onto these
   const xLabels = Array.from({ length: STEPS }, (_, i) => `${Math.round((i / (STEPS - 1)) * 100)}%`)
   const playMeta = new Map(data.patternClusters.map((item) => [item.playId, item]))
-  const playIds = unique(data.tensionSeries.map((item) => item.playId))
+  const focusId = data.focusPlayId ?? ''
+  const rawPlayIds = unique(data.tensionSeries.map((item) => item.playId))
+  // focus play first so it survives series-count trimming and renders on top
+  const playIds = focusId ? [focusId, ...rawPlayIds.filter((id) => id !== focusId)] : rawPlayIds
 
   // group each play's points and order them along the plot (启→合)
   const byPlay = new Map<string, NarrativeResponse['tensionSeries']>()
@@ -556,6 +565,7 @@ function buildNarrativesChart(data: NarrativeResponse) {
       return {
         name: playMeta.get(playId)?.title ?? playId,
         group: playMeta.get(playId)?.pattern ?? '未分类',
+        isFocus: focusId ? playId === focusId : undefined,
         data: resampled.map((value, i) => ({
           x: xLabels[i],
           value,
@@ -567,17 +577,19 @@ function buildNarrativesChart(data: NarrativeResponse) {
 }
 
 function buildAssociationsChart(data: AssociationResponse) {
+  const focusId = data.focusPlayId ?? ''
   return {
     points: data.clusters.map((item) => ({
       id: item.playId,
       label: item.title,
       x: item.x,
       y: item.y,
-      size: 18,
+      size: focusId && item.playId === focusId ? 30 : 18,
       category: item.pattern,
       genre: item.genre,
       topTheme: item.topTheme,
       dominantRelation: item.dominantRelation,
+      isFocus: focusId ? item.playId === focusId : undefined,
       tokens: uniqueTokens([`play:${item.playId}`, `pattern:${item.pattern}`, `genre:${item.genre}`]),
     })),
   }
@@ -725,6 +737,7 @@ function createLineOption(payload: { xLabels: string[]; series: LineSeries[] }) 
       : { xLabels: payload.xLabels, series: pickRepresentativeLineSeries(payload.series, 6) }
   const displayedSeries = normalizedPayload.series
   const valueRange = getLineValueRange(displayedSeries)
+  const hasFocus = displayedSeries.some((series) => series.isFocus)
   return {
     color: chartPalette,
     tooltip: { ...tooltipStyle, trigger: 'axis' },
@@ -754,28 +767,36 @@ function createLineOption(payload: { xLabels: string[]; series: LineSeries[] }) 
             { type: 'slider', bottom: displayedSeries.length <= 8 ? 34 : 6, start: 0, end: 45, height: 18 },
           ]
         : undefined,
-    series: displayedSeries.map((series, index) => ({
-      name: series.name,
-      type: 'line',
-      smooth: true,
-      showSymbol: false,
-      connectNulls: true,
-      lineStyle: { width: index < 4 ? 2.6 : 1.7, opacity: index < 4 ? 0.92 : 0.58 },
-      data: normalizedPayload.xLabels.map((label) => {
-        const point = series.data.find((item) => item.x === label)
-        return {
-          value: point?.value ?? null,
-          tokens: point?.tokens ?? [],
-          label: `${series.name} · ${label}`,
-        }
-      }),
-    })),
+    series: displayedSeries.map((series, index) => {
+      const isFocus = Boolean(series.isFocus)
+      return {
+        name: series.name,
+        type: 'line',
+        smooth: true,
+        showSymbol: false,
+        connectNulls: true,
+        z: isFocus ? 10 : 2,
+        lineStyle: {
+          width: hasFocus ? (isFocus ? 3.4 : 1.3) : index < 4 ? 2.6 : 1.7,
+          opacity: hasFocus ? (isFocus ? 1 : 0.3) : index < 4 ? 0.92 : 0.58,
+        },
+        data: normalizedPayload.xLabels.map((label) => {
+          const point = series.data.find((item) => item.x === label)
+          return {
+            value: point?.value ?? null,
+            tokens: point?.tokens ?? [],
+            label: `${series.name} · ${label}`,
+          }
+        }),
+      }
+    }),
   }
 }
 
 function createScatterOption(payload: { points: ScatterPoint[] }) {
   const highlightPoints = pickHighlightedScatterPoints(payload.points, 18)
   const showAllLabels = payload.points.length <= 36
+  const hasFocus = payload.points.some((point) => point.isFocus)
   return {
     color: chartPalette,
     tooltip: {
@@ -818,12 +839,21 @@ function createScatterOption(payload: { points: ScatterPoint[] }) {
           topTheme: point.topTheme,
           dominantRelation: point.dominantRelation,
           tokens: point.tokens,
-          symbolSize: payload.points.length > 160 ? Math.max(8, point.size - 8) : point.size,
+          symbolSize: point.isFocus
+            ? 30
+            : payload.points.length > 160
+              ? Math.max(8, point.size - 8)
+              : point.size,
+          itemStyle: point.isFocus
+            ? { color: '#8C1D18', opacity: 1, borderColor: '#ffffff', borderWidth: 2 }
+            : undefined,
+          isFocus: point.isFocus,
         })),
-        itemStyle: { opacity: showAllLabels ? 0.78 : 0.32 },
+        itemStyle: { opacity: hasFocus ? 0.22 : showAllLabels ? 0.78 : 0.32 },
         label: {
-          show: showAllLabels,
-          formatter: (params: { data: { label?: string } }) => String(params.data.label ?? ''),
+          show: showAllLabels || hasFocus,
+          formatter: (params: { data: { label?: string; isFocus?: boolean } }) =>
+            hasFocus && !params.data.isFocus ? '' : String(params.data.label ?? ''),
           position: 'top',
           color: '#6b6259',
         },

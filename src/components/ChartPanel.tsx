@@ -56,7 +56,7 @@ export function ChartPanel({
           </button>
         }
       >
-        <ReactECharts option={option} style={{ height }} opts={{ renderer: 'canvas' }} onEvents={onEvents} />
+        <ReactECharts option={option} notMerge style={{ height }} opts={{ renderer: 'canvas' }} onEvents={onEvents} />
       </Surface>
 
       {isExpanded &&
@@ -89,6 +89,7 @@ export function ChartPanel({
               <div className="min-h-0 flex-1 rounded-[28px] border border-amber-200/70 bg-white/80 p-3 md:p-4">
                 <ReactECharts
                   option={option}
+                  notMerge
                   style={{ height: '100%', minHeight: 0 }}
                   opts={{ renderer: 'canvas' }}
                   onEvents={onEvents}
