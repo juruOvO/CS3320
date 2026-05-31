@@ -336,6 +336,31 @@ def main():
             c["roleSubtype"] = assign_subtype(c["roleMain"], feat_row, c["name"])
 
     # ===========================================================
+    # Backfill gender / ageGroup using the now-known 行当.
+    # These were derived in build_features.py BEFORE minor characters had a
+    # 行当 (it's inferred here), so ~9000 came out "未知". Now re-derive them
+    # with the same heuristics — only filling values still "未知", never
+    # overriding one that was already determined.
+    # ===========================================================
+    from build_features import infer_gender, infer_age  # same heuristic table
+
+    gender_filled = 0
+    age_filled = 0
+    for c in chars:
+        if c.get("gender") == "未知":
+            g = infer_gender(c["name"], c.get("roleMain", ""), c.get("roleSubtype", ""))
+            if g != "未知":
+                c["gender"] = g
+                gender_filled += 1
+        if c.get("ageGroup") == "未知":
+            a = infer_age(c["name"], c.get("roleMain", ""), c.get("roleSubtype", ""))
+            if a != "未知":
+                c["ageGroup"] = a
+                age_filled += 1
+    print(f"Backfilled gender for {gender_filled}, ageGroup for {age_filled} characters "
+          f"using inferred 行当", flush=True)
+
+    # ===========================================================
     # Persist + report
     # ===========================================================
     (DATA / "characters.json").write_text(
