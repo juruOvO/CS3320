@@ -317,7 +317,7 @@ export default function DashboardPage() {
         <ChartSlot chartId="narratives" activeTask={activeTask}>
           <ChartPanel
             title={chartTitles.narratives}
-            subtitle="按剧目对照叙事张力在场次上的变化。"
+            subtitle="按剧情进度（0→100%）对照各剧目叙事张力的起伏。"
             option={createLineOption(narrativesPayload)}
             height={380}
             onEvents={{
@@ -514,26 +514,55 @@ function buildThemesChart(data: ThemeResponse) {
   }
 }
 
+// Resample a per-scene tension series onto `steps` evenly-spaced progress points
+// (linear interpolation). Plays with different scene counts thus line up on the
+// same 0%→100% axis instead of leaving the right side blank.
+function resampleTension(values: number[], steps: number): number[] {
+  if (values.length === 0) return Array(steps).fill(null) as number[]
+  if (values.length === 1) return Array(steps).fill(values[0]) as number[]
+  const out: number[] = []
+  for (let i = 0; i < steps; i += 1) {
+    const pos = (i / (steps - 1)) * (values.length - 1)
+    const lo = Math.floor(pos)
+    const hi = Math.ceil(pos)
+    const frac = pos - lo
+    out.push(Number((values[lo] * (1 - frac) + values[hi] * frac).toFixed(4)))
+  }
+  return out
+}
+
 function buildNarrativesChart(data: NarrativeResponse) {
-  const xLabels = unique(data.tensionSeries.map((item) => item.scene)).sort((a, b) => getSceneOrder(a) - getSceneOrder(b))
+  const STEPS = 11 // 0%, 10%, … 100% — every play is resampled onto these
+  const xLabels = Array.from({ length: STEPS }, (_, i) => `${Math.round((i / (STEPS - 1)) * 100)}%`)
   const playMeta = new Map(data.patternClusters.map((item) => [item.playId, item]))
   const playIds = unique(data.tensionSeries.map((item) => item.playId))
-  const pointMap = new Map(data.tensionSeries.map((item) => [`${item.playId}::${item.scene}`, item]))
+
+  // group each play's points and order them along the plot (启→合)
+  const byPlay = new Map<string, NarrativeResponse['tensionSeries']>()
+  for (const item of data.tensionSeries) {
+    const arr = byPlay.get(item.playId) ?? []
+    arr.push(item)
+    byPlay.set(item.playId, arr)
+  }
+  for (const arr of byPlay.values()) {
+    arr.sort((a, b) => getSceneOrder(a.scene) - getSceneOrder(b.scene))
+  }
 
   return {
     xLabels,
-    series: playIds.map((playId) => ({
-      name: playMeta.get(playId)?.title ?? playId,
-      group: playMeta.get(playId)?.pattern ?? '未分类',
-      data: xLabels.map((scene) => {
-        const point = pointMap.get(`${playId}::${scene}`)
-        return {
-          x: scene,
-          value: point?.tension ?? null,
-          tokens: uniqueTokens([`play:${playId}`, `scene:${scene}`]),
-        }
-      }),
-    })),
+    series: playIds.map((playId) => {
+      const points = byPlay.get(playId) ?? []
+      const resampled = resampleTension(points.map((p) => p.tension), STEPS)
+      return {
+        name: playMeta.get(playId)?.title ?? playId,
+        group: playMeta.get(playId)?.pattern ?? '未分类',
+        data: resampled.map((value, i) => ({
+          x: xLabels[i],
+          value,
+          tokens: uniqueTokens([`play:${playId}`, `progress:${xLabels[i]}`]),
+        })),
+      }
+    }),
   }
 }
 

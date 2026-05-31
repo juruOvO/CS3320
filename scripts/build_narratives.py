@@ -59,37 +59,114 @@ ACTION_STAGE_KEYWORDS = ["打", "战", "杀", "翻", "跌", "对刀", "刺", "�
 EMOTION_STAGE_KEYWORDS = ["哭", "笑", "怒", "惊", "惧", "悲", "怒喝", "惊呼"]
 
 
-def per_scene_scores(scene: dict, lines_in_scene: list[dict]) -> dict:
-    """Compute action / emotion / tension for one scene."""
+def is_singing_action(at: str) -> bool:
+    """True for 唱/念-class action types (arias & recitation carry dramatic weight)."""
+    if at in ("唱", "念", "引子", "点绛唇", "同唱", "同念"):
+        return True
+    return any(s in at for s in ("板", "腔", "调", "梆子", "导板", "二六",
+                                 "原板", "慢板", "快板", "流水板", "散板",
+                                 "摇板", "平板", "吹腔"))
+
+
+def per_scene_scores(scene: dict, lines_in_scene: list[dict], play_avg_lines: float) -> dict:
+    """Compute per-scene signals + a RAW (un-normalized) tension.
+
+    The raw tension blends several signals that are common enough across plays
+    to give every scene a distinct value. It is normalized PER PLAY afterwards
+    (see normalize_curve), so the absolute scale here doesn't matter — only the
+    relative ups and downs within one play.
+    """
     n_total = max(len(lines_in_scene), 1)
 
-    # Fast-rhythm music cues + explicit emotion actions
+    n_sing = sum(1 for ln in lines_in_scene if is_singing_action(ln.get("actionType", "")))
     n_fast = sum(1 for ln in lines_in_scene if ln.get("actionType") in FAST_RHYTHMS)
     n_emo_act = sum(1 for ln in lines_in_scene if ln.get("actionType") in EMOTION_ACTIONS)
 
-    # Stage-direction lines: count physical / emotional keywords
+    # Stage-direction keyword hits + speaker-turn counting in one pass
     n_stage_act = 0
     n_stage_emo = 0
+    speakers: list[str] = []
     for ln in lines_in_scene:
-        if ln.get("actionType") != "舞台":
-            continue
-        c = ln.get("content", "")
-        if any(k in c for k in ACTION_STAGE_KEYWORDS):
-            n_stage_act += 1
-        if any(k in c for k in EMOTION_STAGE_KEYWORDS):
-            n_stage_emo += 1
+        at = ln.get("actionType", "")
+        if at == "舞台":
+            c = ln.get("content", "")
+            if any(k in c for k in ACTION_STAGE_KEYWORDS):
+                n_stage_act += 1
+            if any(k in c for k in EMOTION_STAGE_KEYWORDS):
+                n_stage_emo += 1
+        else:
+            spk = ln.get("character", "")
+            if spk:
+                speakers.append(spk)
 
-    action = (n_fast + n_stage_act) / n_total
-    emotion = (n_emo_act + n_stage_emo) / n_total
-    # tension is a soft combination — scale-free
-    tension = 0.55 * action + 0.30 * emotion + 0.15 * min(len(scene.get("characters", [])) / 8, 1.0)
+    # Signals, each a density in [0, ~1]
+    sing_ratio       = n_sing / n_total
+    action_density   = (n_fast + n_stage_act) / n_total
+    emotion_density  = (n_emo_act + n_stage_emo) / n_total
+    turns            = sum(1 for i in range(1, len(speakers)) if speakers[i] != speakers[i - 1])
+    dialogue_density = turns / n_total
+    char_presence    = min(len(scene.get("characters", [])) / 6, 1.0)
+    # scene "weight": how big this scene is vs the play's average scene
+    scene_weight     = min(n_total / play_avg_lines, 2.0) / 2.0 if play_avg_lines > 0 else 0.0
+
+    raw_tension = (
+        0.28 * action_density
+        + 0.22 * emotion_density
+        + 0.20 * sing_ratio
+        + 0.15 * dialogue_density
+        + 0.10 * char_presence
+        + 0.05 * scene_weight
+    )
     return {
-        "action": round(min(action, 1.0), 4),
-        "emotion": round(min(emotion, 1.0), 4),
-        "tension": round(min(tension, 1.0), 4),
+        "action": round(min(action_density, 1.0), 4),
+        "emotion": round(min(emotion_density, 1.0), 4),
+        "rawTension": raw_tension,
         "numCharacters": len(scene.get("characters", [])),
-        "numLines": scene.get("numLines", 0),
+        "numLines": n_total,
     }
+
+
+def normalize_curve(raws: list[float]) -> list[float]:
+    """Min-max normalize a play's raw tensions into [0.1, 1.0].
+
+    This is what makes each play's curve rise and fall on its own scale instead
+    of all curves hugging the bottom of a global axis.
+    """
+    if not raws:
+        return []
+    lo, hi = min(raws), max(raws)
+    if hi - lo < 1e-9:
+        return [0.5] * len(raws)  # flat play → mid line
+    return [round(0.1 + 0.9 * (r - lo) / (hi - lo), 4) for r in raws]
+
+
+def synthetic_scenes(lines: list[dict]) -> list[dict]:
+    """For 折子戏 with no 【第N场】 markers, split the line stream into K equal
+    segments so they still get a tension curve. Each segment becomes a pseudo-scene.
+    """
+    n = len(lines)
+    if n == 0:
+        return []
+    K = max(3, min(8, n // 20))
+    seg = max(1, n // K)
+    out: list[dict] = []
+    for k in range(K):
+        start = k * seg
+        end = n if k == K - 1 else (k + 1) * seg
+        chunk = lines[start:end]
+        if not chunk:
+            continue
+        chars = sorted({ln.get("character", "") for ln in chunk
+                        if ln.get("character") and ln.get("actionType") != "舞台"})
+        out.append({
+            "sceneNum": k + 1,
+            "sceneTitle": f"第{k + 1}段",
+            "numLines": len(chunk),
+            "characters": chars,
+            "actions": dict(Counter(ln.get("actionType", "") for ln in chunk)),
+            "_lines": chunk,
+        })
+    return out
 
 
 def dominant_form(scene: dict) -> str:
@@ -197,60 +274,83 @@ def main():
     turning_points: list[dict] = []
 
     t0 = time.time()
+    synth_count = 0
     for i, play in enumerate(play_jsons.values(), 1):
         pid = play["playId"]
         title = play["title"]
-        scenes = play.get("scenes", [])
-        scenes = [s for s in scenes if s.get("sceneNum", 0) > 0]  # ignore null scene
-        scenes.sort(key=lambda s: s["sceneNum"])
-        if not scenes:
-            per_play_curves[pid] = []
-            per_play_meta[pid] = {"title": title, "genre": play_index.get(pid, {}).get("genre", "其他")}
-            continue
-        total = max(s["sceneNum"] for s in scenes)
-
-        # group lines by scene
-        lines_by_scene: dict[int, list[dict]] = defaultdict(list)
-        for ln in play.get("lines", []):
-            sn = ln.get("sceneNum", 0)
-            if sn > 0:
-                lines_by_scene[sn].append(ln)
-
-        curve = []
-        for sc in scenes:
-            sn = sc["sceneNum"]
-            scores = per_scene_scores(sc, lines_by_scene.get(sn, []))
-            stage = scene_to_stage(sn, total)
-            form = dominant_form(sc)
-            tension_series.append({
-                "playId": pid,
-                "scene": f"第{sn}场",
-                "sceneNum": sn,
-                "stage": stage,
-                "form": form,
-                "tension": scores["tension"],
-                "action": scores["action"],
-                "emotion": scores["emotion"],
-            })
-            performance_pairs[(stage, form)] += 1
-            curve.append(scores["tension"])
-
-        per_play_curves[pid] = curve
+        all_lines = play.get("lines", [])
         per_play_meta[pid] = {
             "title": title,
             "genre": play_index.get(pid, {}).get("genre", "其他"),
         }
 
-        # turning points
+        # Prefer real 【第N场】 scenes; fall back to equal-segment pseudo-scenes
+        # so 折子戏 (no scene markers) still get a tension curve.
+        real_scenes = sorted(
+            [s for s in play.get("scenes", []) if s.get("sceneNum", 0) > 0],
+            key=lambda s: s["sceneNum"],
+        )
+        if real_scenes:
+            lines_by_scene: dict[int, list[dict]] = defaultdict(list)
+            for ln in all_lines:
+                sn = ln.get("sceneNum", 0)
+                if sn > 0:
+                    lines_by_scene[sn].append(ln)
+            scene_units = [(sc, lines_by_scene.get(sc["sceneNum"], [])) for sc in real_scenes]
+        else:
+            scene_units = [(sc, sc["_lines"]) for sc in synthetic_scenes(all_lines)]
+            if scene_units:
+                synth_count += 1
+
+        if not scene_units:
+            per_play_curves[pid] = []
+            continue
+
+        n_scenes = len(scene_units)
+        avg_lines = sum(len(ls) for _, ls in scene_units) / n_scenes
+
+        # Phase 1: raw per-scene scores
+        rows = []
+        for ordinal, (sc, lines_in) in enumerate(scene_units, 1):
+            scores = per_scene_scores(sc, lines_in, avg_lines)
+            rows.append({
+                "sceneNum": sc["sceneNum"],
+                "sceneTitle": sc.get("sceneTitle", ""),
+                "stage": scene_to_stage(ordinal, n_scenes),
+                "form": dominant_form(sc),
+                "action": scores["action"],
+                "emotion": scores["emotion"],
+                "raw": scores["rawTension"],
+            })
+
+        # Phase 2: normalize tension WITHIN this play, then emit
+        curve = normalize_curve([r["raw"] for r in rows])
+        for r, t in zip(rows, curve):
+            label_scene = f"第{r['sceneNum']}场" if real_scenes else r["sceneTitle"]
+            tension_series.append({
+                "playId": pid,
+                "scene": label_scene,
+                "sceneNum": r["sceneNum"],
+                "stage": r["stage"],
+                "form": r["form"],
+                "tension": t,
+                "action": r["action"],
+                "emotion": r["emotion"],
+            })
+            performance_pairs[(r["stage"], r["form"])] += 1
+        per_play_curves[pid] = curve
+
+        # turning points (on the normalized curve)
         peaks = find_turning_points(curve)
         for rank, idx_in_curve in enumerate(peaks, 1):
-            scene_num = scenes[idx_in_curve]["sceneNum"]
-            scene_title = scenes[idx_in_curve].get("sceneTitle") or f"第{scene_num}场"
+            r = rows[idx_in_curve]
+            scene_num = r["sceneNum"]
+            scene_title = r["sceneTitle"] or f"第{scene_num}场"
             tension_val = curve[idx_in_curve]
             label = "高潮" if rank == 1 else ("转折" if rank == 2 else "波动")
             turning_points.append({
                 "playId": pid,
-                "scene": f"第{scene_num}场",
+                "scene": f"第{scene_num}场" if real_scenes else scene_title,
                 "sceneNum": scene_num,
                 "label": label,
                 "tension": tension_val,
@@ -258,7 +358,7 @@ def main():
             })
 
         if i % 200 == 0 or i == len(play_jsons):
-            print(f"[{i}/{len(play_jsons)}]  elapsed={time.time()-t0:.1f}s", flush=True)
+            print(f"[{i}/{len(play_jsons)}]  synth={synth_count}  elapsed={time.time()-t0:.1f}s", flush=True)
 
     # ===========================================================
     # Pattern clustering on resampled curves

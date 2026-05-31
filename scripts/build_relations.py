@@ -126,6 +126,11 @@ def build_play_graph(play: dict, char_index: dict[tuple[str, str], dict]) -> tup
         if len(members) >= 2:
             scene_member_lists.append((sc["sceneNum"], members))
 
+    # Note: plays that end up with no edges here are 独角戏 (single-character
+    # folk pieces like 林冲夜奔, 牡丹亭·拾画) — they genuinely have no character
+    # relationships, so an empty graph is correct. The frontend should show an
+    # "独角戏" empty-state rather than a broken chart.
+
     # Collect edges
     edge_scenes: dict[tuple[str, str], list[int]] = defaultdict(list)
     for scene_num, members in scene_member_lists:
