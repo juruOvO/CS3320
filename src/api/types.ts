@@ -124,6 +124,9 @@ export interface NarrativeResponse {
   performanceDistribution: Array<{ stage: string; form: string; value: number }>
   patternClusters: Array<{ playId: string; title: string; genre: string; x: number; y: number; pattern: string }>
   turningPoints: Array<{ playId: string; scene: string; label: string; description: string }>
+  // Set when a single play is selected: that play is the focus line; the rest of
+  // tensionSeries are same-pattern peers shown dimmed for comparison.
+  focusPlayId?: string
 }
 
 export interface AssociationResponse {
@@ -141,4 +144,7 @@ export interface AssociationResponse {
     dominantRelation?: string
   }>
   rules: Array<{ id: string; title: string; support: number; confidence: number; description: string; samples: string[] }>
+  // Set when a single play is selected: that play is highlighted among the
+  // background distribution of clusters.
+  focusPlayId?: string
 }

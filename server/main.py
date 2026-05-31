@@ -602,6 +602,22 @@ def get_narratives(
     filters = common_filters(period, genre, playId, roleType, characterId, theme, narrativePattern)
     play_ids = filter_play_ids(filters)
 
+    # When a single play is selected, don't reduce the 叙事曲线 to one lonely line —
+    # add a small 对照组 of plays sharing the same narrativePattern. The chart then
+    # highlights the focus play and dims the peers, so "对照各剧目" still holds.
+    focus_play_id = ""
+    if filters["playId"] and filters["playId"] in PLAY_BY_ID:
+        focus_play_id = filters["playId"]
+        pattern = PLAY_BY_ID[focus_play_id].get("narrativePattern", "")
+        peers = [
+            p for p in PLAYS
+            if p["id"] != focus_play_id
+            and p.get("narrativePattern") == pattern
+            and p.get("sceneCount", 0) > 0
+        ]
+        peers.sort(key=lambda p: -p.get("sceneCount", 0))
+        play_ids = {focus_play_id} | {p["id"] for p in peers[:5]}
+
     tension_series = [t for t in NARRATIVE_TENSIONS if t["playId"] in play_ids]
 
     # performance distribution: stage × form within filtered set
@@ -632,6 +648,7 @@ def get_narratives(
         "performanceDistribution": perf_dist,
         "patternClusters": clusters,
         "turningPoints": turning,
+        "focusPlayId": focus_play_id,
         "totals": {
             "tensionSeries": total_tension_before_cap,
             "turningPoints": total_turning_before_cap,
@@ -659,6 +676,16 @@ def get_associations(
 
     # Per-play signatures are precomputed at startup — just look them up.
     play_signatures: list[dict] = [PLAY_SIGNATURE[pid] for pid in play_ids if pid in PLAY_SIGNATURE]
+
+    # The scatter (clusters) needs a background distribution: when a single play is
+    # selected, don't collapse it to one dot — show the same filter set ignoring
+    # playId, and highlight the selected one. So you can see where the play sits.
+    focus_play_id = filters["playId"] if (filters["playId"] and filters["playId"] in PLAY_BY_ID) else ""
+    if focus_play_id:
+        cluster_ids = filter_play_ids({**filters, "playId": None})
+    else:
+        cluster_ids = play_ids
+    cluster_sigs: list[dict] = [PLAY_SIGNATURE[pid] for pid in cluster_ids if pid in PLAY_SIGNATURE]
 
     sankey_links_ct = Counter()
     matrix_ct = Counter()  # (relationFeature, targetFeature)
@@ -690,10 +717,11 @@ def get_associations(
         for (rt, th), v in matrix_ct.most_common()
     ]
 
-    # clusters: re-use narratives.patternClusters but enrich with topTheme + dominantRelation
+    # clusters: re-use narratives.patternClusters but enrich with topTheme + dominantRelation.
+    # Uses cluster_sigs (background distribution) so the scatter keeps many points.
     base_clusters = {pc["playId"]: pc for pc in NARRATIVES.get("patternClusters", [])}
     clusters: list[dict] = []
-    for sig in play_signatures:
+    for sig in cluster_sigs:
         b = base_clusters.get(sig["playId"])
         if not b:
             continue
@@ -731,6 +759,7 @@ def get_associations(
         "matrix": matrix,
         "clusters": clusters,
         "rules": rules,
+        "focusPlayId": focus_play_id,
     }
 
 
