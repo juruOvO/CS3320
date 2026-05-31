@@ -1,19 +1,7 @@
-import { LayoutDashboard, Link2, Network, ScrollText, Shapes, Theater, UsersRound } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { Link, useLocation } from 'react-router-dom'
 import { apiClient } from '@/api/client'
 import { useAsyncData } from '@/hooks/useAsyncData'
 import { useFiltersStore } from '@/store/useFiltersStore'
-import { cn } from '@/lib/utils'
-
-const navItems = [
-  { to: '/', label: '总览', icon: LayoutDashboard },
-  { to: '/roles', label: '角色与行当', icon: UsersRound },
-  { to: '/relations', label: '关系网络', icon: Network },
-  { to: '/themes', label: '主题分析', icon: Theater },
-  { to: '/narratives', label: '叙事结构', icon: ScrollText },
-  { to: '/associations', label: '关联分析', icon: Link2 },
-]
 
 function SelectField({
   label,
@@ -46,7 +34,6 @@ function SelectField({
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const location = useLocation()
   const { filters, resetFilters, setFilter } = useFiltersStore()
   const { data } = useAsyncData(() => apiClient.getFilterOptions(), [])
 
@@ -62,51 +49,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-[#f4ecdd] text-stone-800">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,_rgba(140,29,24,0.08),_transparent_38%),radial-gradient(circle_at_bottom_right,_rgba(58,107,111,0.08),_transparent_28%)]" />
-      <div className="relative mx-auto flex min-h-screen max-w-[1720px] gap-6 px-4 py-4 lg:px-6">
-        <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] w-[260px] flex-col justify-between rounded-[32px] border border-amber-200/70 bg-[rgba(39,28,22,0.94)] p-5 text-stone-100 shadow-[0_20px_60px_rgba(30,18,13,0.35)] lg:flex">
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#8C1D18] text-white">
-                <Shapes className="h-6 w-6" />
-              </div>
-              <div>
-                <h1 className="text-lg font-semibold tracking-wide">戏曲剧本多维分析平台</h1>
-              </div>
-            </div>
-            <nav className="mt-8 space-y-2">
-              {navItems.map((item) => {
-                const Icon = item.icon
-                const active = location.pathname === item.to
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    className={cn(
-                      'flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition',
-                      active
-                        ? 'bg-white text-stone-900 shadow-lg'
-                        : 'text-stone-300 hover:bg-white/10 hover:text-white',
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span>{item.label}</span>
-                  </Link>
-                )
-              })}
-            </nav>
-          </div>
-          <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
-            <p className="text-xs uppercase tracking-[0.24em] text-amber-100/60">原型说明</p>
-            <p className="mt-3 text-sm leading-6 text-stone-300">默认使用mock数据驱动，不代表最终结果</p>
-          </div>
-        </aside>
-
-        <main className="relative flex-1">
+      <div className="relative mx-auto min-h-screen max-w-[1760px] px-4 py-4 lg:px-6">
+        <main className="relative">
           <header className="rounded-[32px] border border-amber-200/70 bg-[rgba(255,249,241,0.88)] p-5 shadow-[0_20px_60px_rgba(53,32,17,0.08)] backdrop-blur">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-[#8C1D18]">Prototype / Frontend Only</p>
-                <h2 className="mt-2 font-serif text-3xl text-stone-950">戏曲文本可视化系统</h2>
+                <p className="text-xs uppercase tracking-[0.3em] text-[#8C1D18]">Single Page Linked Dashboard</p>
+                <h2 className="mt-2 font-serif text-3xl text-stone-950">戏曲文本分析看板</h2>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {activeFilters.length > 0 ? (

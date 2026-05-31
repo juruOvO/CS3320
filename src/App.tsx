@@ -1,26 +1,21 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from '@/components/AppShell'
-import AssociationsPage from '@/pages/AssociationsPage'
-import Home from '@/pages/Home'
-import NarrativesPage from '@/pages/NarrativesPage'
+import DashboardPage from '@/pages/DashboardPage'
 import PlayDetailPage from '@/pages/PlayDetailPage'
-import RelationsPage from '@/pages/RelationsPage'
-import RolesPage from '@/pages/RolesPage'
-import ThemesPage from '@/pages/ThemesPage'
 
 export default function App() {
   return (
     <BrowserRouter>
       <AppShell>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/roles" element={<RolesPage />} />
-          <Route path="/relations" element={<RelationsPage />} />
-          <Route path="/themes" element={<ThemesPage />} />
-          <Route path="/narratives" element={<NarrativesPage />} />
-          <Route path="/associations" element={<AssociationsPage />} />
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/roles" element={<Navigate to="/" replace />} />
+          <Route path="/relations" element={<Navigate to="/" replace />} />
+          <Route path="/themes" element={<Navigate to="/" replace />} />
+          <Route path="/narratives" element={<Navigate to="/" replace />} />
+          <Route path="/associations" element={<Navigate to="/" replace />} />
           <Route path="/plays/:playId" element={<PlayDetailPage />} />
-          <Route path="*" element={<Home />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AppShell>
     </BrowserRouter>

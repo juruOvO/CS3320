@@ -31,7 +31,7 @@ export default function PlayDetailPage() {
           to="/"
           className="rounded-full border border-[#8C1D18]/20 px-4 py-2 text-sm text-[#8C1D18] transition hover:bg-[#8C1D18] hover:text-white"
         >
-          返回总览
+          返回分析中枢
         </Link>
       </div>
 
