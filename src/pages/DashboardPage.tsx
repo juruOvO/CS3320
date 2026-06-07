@@ -191,7 +191,6 @@ export default function DashboardPage() {
     hasNarrativePlay(linkedNarrativesState.data, linkedNarrativePlayId)
       ? linkedNarrativesState.data
       : null
-  const taskConfig = taskMeta[activeTask]
 
   useEffect(() => {
     setInteraction(null)
@@ -264,7 +263,7 @@ export default function DashboardPage() {
             title={chartTitles.overview}
             subtitle="从样本构成进入，全局查看时期与剧类的整体分布。"
             option={createOverviewOption(overviewPayload)}
-            height={360}
+            height={380}
             onEvents={{
               click: (params) => {
                 const point = getClickPoint(params)
@@ -344,7 +343,7 @@ export default function DashboardPage() {
                 : '按剧情进度（0→100%）对照各剧目叙事张力的起伏。'
             }
             option={createLineOption(narrativesPayload)}
-            height={380}
+            height={420}
             onEvents={{
               click: (params) => {
                 const point = getClickPoint(params)
@@ -424,7 +423,6 @@ function buildRolesChart(data: CharacterRoleResponse) {
   const sourceNames = new Set(data.sankeyLinks.map((link) => link.source))
   const targetNames = new Set(data.sankeyLinks.map((link) => link.target))
   const roleNames = new Set([...targetNames].filter((name) => !sourceNames.has(name)))
-  const ageNames = new Set([...sourceNames].filter((name) => targetNames.has(name)))
 
   const getNodeId = (layer: 'source' | 'middle' | 'target', label: string) => `${layer}:${label}`
   const getNodeLabel = (nodeId: string) => nodeId.split(':').slice(1).join(':')
@@ -622,9 +620,26 @@ function createOverviewOption(payload: {
   return {
     color: chartPalette,
     tooltip: { ...tooltipStyle, trigger: 'axis' },
-    legend: { bottom: 0, textStyle: { color: '#6b6259' } },
-    grid: commonGrid,
-    xAxis: { type: 'category', data: payload.xLabels, ...axisStyle },
+    legend: {
+      bottom: 0,
+      width: '92%',
+      itemWidth: 16,
+      itemHeight: 10,
+      textStyle: { color: '#6b6259', fontSize: 11 },
+    },
+    grid: { ...commonGrid, top: 44, bottom: 74 },
+    xAxis: {
+      type: 'category',
+      data: payload.xLabels,
+      ...axisStyle,
+      axisLabel: {
+        ...axisStyle.axisLabel,
+        interval: 0,
+        rotate: payload.xLabels.length > 7 ? 16 : 0,
+        margin: 12,
+        hideOverlap: true,
+      },
+    },
     yAxis: { type: 'value', ...axisStyle },
     series: payload.series.map((series) => ({
       name: series.name,
@@ -682,7 +697,8 @@ function createSankeyOption(payload: { nodes: SankeyNode[]; links: SankeyLink[] 
 }
 
 function createGraphOption(payload: { nodes: GraphNode[]; links: GraphLink[] }) {
-  const categories = unique(payload.nodes.map((node) => node.category))
+  const readablePayload = limitGraphForDisplay(payload, 42)
+  const categories = unique(readablePayload.nodes.map((node) => node.category))
   const categoryIndex = new Map(categories.map((category, index) => [category, index]))
 
   return {
@@ -692,20 +708,37 @@ function createGraphOption(payload: { nodes: GraphNode[]; links: GraphLink[] }) 
       {
         type: 'graph',
         layout: 'force',
+        top: 42,
+        right: 48,
+        bottom: 42,
+        left: 48,
         roam: true,
         draggable: true,
-        force: { repulsion: 210, edgeLength: [90, 160] },
+        force: {
+          initLayout: 'circular',
+          repulsion: 130,
+          edgeLength: [68, 118],
+          gravity: 0.32,
+          layoutAnimation: false,
+        },
         categories: categories.map((category) => ({ name: category })),
-        label: { show: true, color: '#433b34' },
+        label: {
+          show: true,
+          color: '#433b34',
+          fontSize: 11,
+          width: 58,
+          overflow: 'truncate',
+        },
+        labelLayout: { hideOverlap: true },
         lineStyle: { opacity: 0.72, color: '#b38d68' },
-        data: payload.nodes.map((node) => ({
+        data: readablePayload.nodes.map((node) => ({
           id: node.id,
           name: node.name,
           category: categoryIndex.get(node.category) ?? 0,
-          symbolSize: Math.max(18, Math.min(node.value * 1.6, 54)),
+          symbolSize: Math.max(16, Math.min(node.value * 1.25, 42)),
           tokens: node.tokens,
         })),
-        links: payload.links.map((link) => ({
+        links: readablePayload.links.map((link) => ({
           source: link.source,
           target: link.target,
           value: link.value,
@@ -726,15 +759,27 @@ function createHeatmapOption(payload: {
 
   return {
     tooltip: tooltipStyle,
-    grid: { ...commonGrid, left: 88 },
-    xAxis: { type: 'category', data: payload.xLabels, ...axisStyle },
-    yAxis: { type: 'category', data: payload.yLabels, ...axisStyle },
+    grid: { ...commonGrid, top: 42, left: 96, bottom: 86 },
+    xAxis: {
+      type: 'category',
+      data: payload.xLabels,
+      ...axisStyle,
+      axisLabel: { ...axisStyle.axisLabel, interval: 0, hideOverlap: true },
+    },
+    yAxis: {
+      type: 'category',
+      data: payload.yLabels,
+      ...axisStyle,
+      axisLabel: { ...axisStyle.axisLabel, width: 76, overflow: 'truncate' },
+    },
     visualMap: {
       min: 0,
       max: maxValue,
       orient: 'horizontal',
       left: 'center',
-      bottom: 0,
+      bottom: 6,
+      itemWidth: 12,
+      itemHeight: 180,
       inRange: { color: ['#f8efe1', '#d5ac76', '#8C1D18'] },
     },
     series: [
@@ -758,15 +803,26 @@ function createLineOption(payload: LineChartPayload) {
   const displayedSeries = normalizedPayload.series
   const valueRange = payload.valueRange ?? getLineValueRange(displayedSeries)
   const hasFocus = displayedSeries.some((series) => series.isFocus)
+  const showLegend = displayedSeries.length <= 8
   return {
     color: chartPalette,
     tooltip: { ...tooltipStyle, trigger: 'axis' },
-    legend:
-      displayedSeries.length <= 8
-        ? { bottom: 0, textStyle: { color: '#6b6259' } }
-        : { show: false },
-    grid: commonGrid,
-    xAxis: { type: 'category', data: normalizedPayload.xLabels, ...axisStyle },
+    legend: showLegend
+      ? {
+          bottom: 0,
+          width: '92%',
+          itemWidth: 16,
+          itemHeight: 10,
+          textStyle: { color: '#6b6259', fontSize: 11 },
+        }
+      : { show: false },
+    grid: { ...commonGrid, top: 42, bottom: showLegend ? 92 : 56 },
+    xAxis: {
+      type: 'category',
+      data: normalizedPayload.xLabels,
+      ...axisStyle,
+      axisLabel: { ...axisStyle.axisLabel, margin: 12 },
+    },
     yAxis: {
       type: 'value',
       scale: true,
@@ -784,7 +840,7 @@ function createLineOption(payload: LineChartPayload) {
       normalizedPayload.xLabels.length > 12
         ? [
             { type: 'inside', start: 0, end: 45 },
-            { type: 'slider', bottom: displayedSeries.length <= 8 ? 34 : 6, start: 0, end: 45, height: 18 },
+            { type: 'slider', bottom: showLegend ? 34 : 8, start: 0, end: 45, height: 18 },
           ]
         : undefined,
     series: displayedSeries.map((series, index) => {
@@ -814,7 +870,7 @@ function createLineOption(payload: LineChartPayload) {
 }
 
 function createScatterOption(payload: { points: ScatterPoint[] }) {
-  const highlightPoints = pickHighlightedScatterPoints(payload.points, 18)
+  const highlightPoints = pickHighlightedScatterPoints(payload.points, 10)
   const showAllLabels = payload.points.length <= 36
   const hasFocus = payload.points.some((point) => point.isFocus)
   return {
@@ -845,9 +901,21 @@ function createScatterOption(payload: { points: ScatterPoint[] }) {
         ].join('')
       },
     },
-    grid: commonGrid,
-    xAxis: { type: 'value', name: '关系复杂度', ...axisStyle },
-    yAxis: { type: 'value', name: '主题-叙事耦合度', ...axisStyle },
+    grid: { ...commonGrid, top: 54, right: 52, bottom: 58 },
+    xAxis: {
+      type: 'value',
+      name: '关系复杂度',
+      nameLocation: 'middle',
+      nameGap: 34,
+      ...axisStyle,
+    },
+    yAxis: {
+      type: 'value',
+      name: '主题-叙事耦合度',
+      nameLocation: 'middle',
+      nameGap: 42,
+      ...axisStyle,
+    },
     series: [
       {
         type: 'scatter',
@@ -876,7 +944,9 @@ function createScatterOption(payload: { points: ScatterPoint[] }) {
             hasFocus && !params.data.isFocus ? '' : String(params.data.label ?? ''),
           position: 'top',
           color: '#6b6259',
+          fontSize: 11,
         },
+        labelLayout: { hideOverlap: true },
         emphasis: {
           scale: true,
           itemStyle: { opacity: 1, borderColor: '#8C1D18', borderWidth: 2 },
@@ -909,7 +979,9 @@ function createScatterOption(payload: { points: ScatterPoint[] }) {
                 formatter: (params: { data: { label?: string } }) => String(params.data.label ?? ''),
                 position: 'top',
                 color: '#6b6259',
+                fontSize: 11,
               },
+              labelLayout: { hideOverlap: true },
             },
           ]),
     ],
@@ -1009,6 +1081,27 @@ function getScatterPayload(
   if (!interaction) return scatter
   const points = scatter.points.filter((point) => matchesTokens(point, interaction.tokens))
   return points.length > 0 ? { points } : scatter
+}
+
+function limitGraphForDisplay(graph: { nodes: GraphNode[]; links: GraphLink[] }, maxNodes: number) {
+  if (graph.nodes.length <= maxNodes) return graph
+
+  const linkWeight = new Map<string, number>()
+  graph.links.forEach((link) => {
+    linkWeight.set(link.source, (linkWeight.get(link.source) ?? 0) + link.value)
+    linkWeight.set(link.target, (linkWeight.get(link.target) ?? 0) + link.value)
+  })
+
+  const visibleNodes = [...graph.nodes]
+    .sort((a, b) => b.value + (linkWeight.get(b.id) ?? 0) * 0.35 - (a.value + (linkWeight.get(a.id) ?? 0) * 0.35))
+    .slice(0, maxNodes)
+  const visibleIds = new Set(visibleNodes.map((node) => node.id))
+  const visibleLinks = graph.links
+    .filter((link) => visibleIds.has(link.source) && visibleIds.has(link.target))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, maxNodes * 2)
+
+  return { nodes: visibleNodes, links: visibleLinks }
 }
 
 function getClickPoint(params: unknown): ClickPoint | null {
