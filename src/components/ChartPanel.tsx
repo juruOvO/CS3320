@@ -19,6 +19,11 @@ export function ChartPanel({
 }) {
   const [isExpanded, setIsExpanded] = useState(false)
 
+  const handleChartReady = (chart: { resize: () => void }) => {
+    window.requestAnimationFrame(() => chart.resize())
+    window.setTimeout(() => chart.resize(), 80)
+  }
+
   useEffect(() => {
     if (!isExpanded) return undefined
 
@@ -56,7 +61,14 @@ export function ChartPanel({
           </button>
         }
       >
-        <ReactECharts option={option} notMerge style={{ height }} opts={{ renderer: 'canvas' }} onEvents={onEvents} />
+        <ReactECharts
+          option={option}
+          notMerge
+          style={{ height }}
+          opts={{ renderer: 'canvas' }}
+          onEvents={onEvents}
+          onChartReady={handleChartReady}
+        />
       </Surface>
 
       {isExpanded &&
@@ -93,6 +105,7 @@ export function ChartPanel({
                   style={{ height: '100%', minHeight: 0 }}
                   opts={{ renderer: 'canvas' }}
                   onEvents={onEvents}
+                  onChartReady={handleChartReady}
                 />
               </div>
             </div>

@@ -21,13 +21,33 @@ function includesIfSelected(filterValue: string | undefined, target: string) {
 }
 
 function getVisiblePlays(filters: GlobalFilters): PlayRecord[] {
-  return plays.filter(
+  let visiblePlays = plays.filter(
     (play) =>
       includesIfSelected(filters.period, play.period) &&
       includesIfSelected(filters.genre, play.genre) &&
       includesIfSelected(filters.playId, play.id) &&
       includesIfSelected(filters.narrativePattern, play.narrativePattern),
   )
+
+  if (filters.theme) {
+    const themePlayIds = new Set(themes.filter((theme) => theme.theme === filters.theme).map((theme) => theme.playId))
+    visiblePlays = visiblePlays.filter((play) => themePlayIds.has(play.id))
+  }
+
+  if (filters.roleType || filters.characterId) {
+    const characterPlayIds = new Set(
+      characters
+        .filter(
+          (character) =>
+            includesIfSelected(filters.roleType, character.roleMain) &&
+            includesIfSelected(filters.characterId, character.id),
+        )
+        .map((character) => character.playId),
+    )
+    visiblePlays = visiblePlays.filter((play) => characterPlayIds.has(play.id))
+  }
+
+  return visiblePlays
 }
 
 function getVisibleCharacters(filters: GlobalFilters): CharacterRecord[] {
@@ -205,12 +225,28 @@ export async function getCharacterRoles(filters: GlobalFilters): Promise<Charact
 export async function getRelations(filters: GlobalFilters): Promise<RelationNetworkResponse> {
   await wait()
   const visiblePlays = getVisiblePlays(filters)
-  const visibleCharacters = getVisibleCharacters(filters)
   const playIds = new Set(visiblePlays.map((play) => play.id))
-  const characterMap = new Map(visibleCharacters.map((character) => [character.id, character]))
-  const visibleRelations = relations.filter(
-    (relation) => playIds.has(relation.playId) && characterMap.has(relation.source) && characterMap.has(relation.target),
+  const baseCharacters = characters.filter(
+    (character) => playIds.has(character.playId) && includesIfSelected(filters.roleType, character.roleMain),
   )
+  const baseCharacterMap = new Map(baseCharacters.map((character) => [character.id, character]))
+  let visibleRelations = relations.filter(
+    (relation) => playIds.has(relation.playId) && baseCharacterMap.has(relation.source) && baseCharacterMap.has(relation.target),
+  )
+
+  if (filters.characterId) {
+    visibleRelations = visibleRelations.filter(
+      (relation) => relation.source === filters.characterId || relation.target === filters.characterId,
+    )
+  }
+
+  const relatedCharacterIds = filters.characterId
+    ? new Set([filters.characterId, ...visibleRelations.flatMap((relation) => [relation.source, relation.target])])
+    : null
+  const visibleCharacters = baseCharacters.filter(
+    (character) => !relatedCharacterIds || relatedCharacterIds.has(character.id),
+  )
+  const characterMap = new Map(visibleCharacters.map((character) => [character.id, character]))
 
   const degreeMap = new Map<string, number>()
   visibleRelations.forEach((relation) => {
