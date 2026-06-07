@@ -176,6 +176,55 @@ def filter_chars(filters: dict, play_ids: set[str]) -> list[dict]:
     return out
 
 
+def scene_sort_key(row: dict) -> int:
+    scene_num = row.get("sceneNum")
+    if isinstance(scene_num, (int, float)):
+        return int(scene_num)
+    scene = str(row.get("scene", ""))
+    digits = "".join(ch for ch in scene if ch.isdigit())
+    return int(digits) if digits else 10**9
+
+
+def select_complete_tension_curves(tension_series: list[dict], max_rows: int) -> tuple[list[dict], set[str]]:
+    """Keep whole play curves under the global payload cap."""
+    by_play: dict[str, list[dict]] = defaultdict(list)
+    for row in tension_series:
+        by_play[row["playId"]].append(row)
+    for rows in by_play.values():
+        rows.sort(key=scene_sort_key)
+
+    grouped_ids: dict[str, list[str]] = defaultdict(list)
+    for play_id in by_play:
+        play = PLAY_BY_ID.get(play_id, {})
+        pattern = play.get("narrativePattern") or ""
+        grouped_ids[pattern].append(play_id)
+
+    for ids in grouped_ids.values():
+        ids.sort(key=lambda pid: (PLAY_BY_ID.get(pid, {}).get("genre", ""), pid))
+
+    selected_rows: list[dict] = []
+    selected_ids: set[str] = set()
+    patterns = sorted(grouped_ids)
+    while patterns:
+        progressed = False
+        for pattern in patterns:
+            ids = grouped_ids[pattern]
+            while ids:
+                play_id = ids.pop(0)
+                rows = by_play[play_id]
+                if selected_rows and len(selected_rows) + len(rows) > max_rows:
+                    continue
+                selected_rows.extend(rows)
+                selected_ids.add(play_id)
+                progressed = True
+                break
+        patterns = [pattern for pattern in patterns if grouped_ids[pattern]]
+        if not progressed:
+            break
+
+    return selected_rows, selected_ids
+
+
 def build_theme_sunburst(profiles: list[dict]) -> dict[str, Any]:
     genre_theme_counter: dict[str, Counter] = defaultdict(Counter)
 
@@ -637,8 +686,9 @@ def get_narratives(
     total_tension_before_cap = len(tension_series)
     total_turning_before_cap = len(turning)
     if not narrow_filter and len(tension_series) > MAX_TENSION_GLOBAL:
-        # Keep peaks (highest tension) — representative of strong scenes
-        tension_series = sorted(tension_series, key=lambda t: -t.get("tension", 0))[:MAX_TENSION_GLOBAL]
+        tension_series, capped_play_ids = select_complete_tension_curves(tension_series, MAX_TENSION_GLOBAL)
+        clusters = [pc for pc in clusters if pc["playId"] in capped_play_ids]
+        turning = [tp for tp in turning if tp["playId"] in capped_play_ids]
     if not narrow_filter and len(turning) > MAX_TURNING_GLOBAL:
         turning = sorted(turning, key=lambda t: -t.get("tension", 0))[:MAX_TURNING_GLOBAL]
 

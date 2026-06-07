@@ -93,6 +93,12 @@ type LineSeries = {
   data: Array<{ x: string; value: number | null; tokens: string[] }>
 }
 
+type LineChartPayload = {
+  xLabels: string[]
+  series: LineSeries[]
+  valueRange?: { min: number; max: number }
+}
+
 type ScatterPoint = {
   id: string
   label: string
@@ -172,6 +178,19 @@ export default function DashboardPage() {
   const [interaction, setInteraction] = useState<InteractionState | null>(null)
   const dashboardState = useAsyncData(() => loadDashboardData(filters), [filters])
   const dashboard = dashboardState.data ?? null
+  const linkedNarrativePlayId =
+    interaction?.chartId === 'associations' ? getTokenValue(interaction.tokens, 'play') : ''
+  const linkedNarrativesState = useAsyncData(
+    (): Promise<NarrativeResponse | null> =>
+      linkedNarrativePlayId ? apiClient.getNarratives({ playId: linkedNarrativePlayId }) : Promise.resolve(null),
+    [linkedNarrativePlayId],
+  )
+  const linkedNarratives =
+    linkedNarrativePlayId &&
+    linkedNarrativesState.data &&
+    hasNarrativePlay(linkedNarrativesState.data, linkedNarrativePlayId)
+      ? linkedNarrativesState.data
+      : null
   const taskConfig = taskMeta[activeTask]
 
   useEffect(() => {
@@ -195,8 +214,8 @@ export default function DashboardPage() {
     [dashboard, interaction],
   )
   const narrativesPayload = useMemo(
-    () => (dashboard ? getLinePayload(buildNarrativesChart(dashboard.narratives), interaction) : null),
-    [dashboard, interaction],
+    () => (dashboard ? getLinePayload(buildNarrativesChart(linkedNarratives ?? dashboard.narratives), interaction) : null),
+    [dashboard, interaction, linkedNarratives],
   )
   const associationsPayload = useMemo(
     () => (dashboard ? getScatterPayload(buildAssociationsChart(dashboard.associations), interaction) : null),
@@ -554,11 +573,12 @@ function buildNarrativesChart(data: NarrativeResponse) {
     byPlay.set(item.playId, arr)
   }
   for (const arr of byPlay.values()) {
-    arr.sort((a, b) => getSceneOrder(a.scene) - getSceneOrder(b.scene))
+    arr.sort((a, b) => getSceneOrder(a) - getSceneOrder(b))
   }
 
   return {
     xLabels,
+    valueRange: { min: 0, max: 1 },
     series: playIds.map((playId) => {
       const points = byPlay.get(playId) ?? []
       const resampled = resampleTension(points.map((p) => p.tension), STEPS)
@@ -730,13 +750,13 @@ function createHeatmapOption(payload: {
   }
 }
 
-function createLineOption(payload: { xLabels: string[]; series: LineSeries[] }) {
+function createLineOption(payload: LineChartPayload) {
   const normalizedPayload =
     payload.series.length > 12
       ? aggregateNormalizedLineSeriesByGroup(payload.series)
       : { xLabels: payload.xLabels, series: pickRepresentativeLineSeries(payload.series, 6) }
   const displayedSeries = normalizedPayload.series
-  const valueRange = getLineValueRange(displayedSeries)
+  const valueRange = payload.valueRange ?? getLineValueRange(displayedSeries)
   const hasFocus = displayedSeries.some((series) => series.isFocus)
   return {
     color: chartPalette,
@@ -961,7 +981,7 @@ function getHeatmapPayload(
 }
 
 function getLinePayload(
-  line: { xLabels: string[]; series: LineSeries[] },
+  line: LineChartPayload,
   interaction: InteractionState | null,
 ) {
   if (!interaction) return line
@@ -978,6 +998,7 @@ function getLinePayload(
   return {
     xLabels: unique(filteredSeries.flatMap((series) => series.data.map((point) => point.x))),
     series: filteredSeries,
+    valueRange: line.valueRange,
   }
 }
 
@@ -1113,8 +1134,19 @@ function uniqueTokens(tokens: string[]) {
   return unique(tokens.filter(Boolean))
 }
 
-function getSceneOrder(scene: string) {
-  const matched = scene.match(/\d+/)
+function getTokenValue(tokens: string[], key: string) {
+  const prefix = `${key}:`
+  const token = tokens.find((item) => item.startsWith(prefix))
+  return token ? token.slice(prefix.length) : ''
+}
+
+function hasNarrativePlay(data: NarrativeResponse, playId: string) {
+  return data.tensionSeries.some((item) => item.playId === playId)
+}
+
+function getSceneOrder(point: { scene?: string; sceneNum?: number }) {
+  if (typeof point.sceneNum === 'number') return point.sceneNum
+  const matched = point.scene?.match(/\d+/)
   return matched ? Number(matched[0]) : Number.MAX_SAFE_INTEGER
 }
 

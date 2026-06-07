@@ -37,3 +37,5 @@ __pycache__/
 # but `data/` IS committed — it's the small derived layer the FastAPI server reads.
 京剧剧本/
 京剧剧本_json/
+data/llm_runs/
+data/llm_cache/

@@ -120,7 +120,7 @@ export interface ThemeResponse {
 
 export interface NarrativeResponse {
   stages: Array<{ stage: string; order: number; description: string }>
-  tensionSeries: Array<{ playId: string; scene: string; tension: number; action: number; emotion: number }>
+  tensionSeries: Array<{ playId: string; scene: string; sceneNum?: number; tension: number; action: number; emotion: number }>
   performanceDistribution: Array<{ stage: string; form: string; value: number }>
   patternClusters: Array<{ playId: string; title: string; genre: string; x: number; y: number; pattern: string }>
   turningPoints: Array<{ playId: string; scene: string; label: string; description: string }>

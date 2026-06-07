@@ -1,56 +1,37 @@
-=== infer_roles.py 报告 ===
-Total characters:     14232
-Labeled (train pool): 5137
-Unlabeled (predicted):9095
-Validation accuracy:  0.5778
+=== infer_roles.py LLM report ===
+model:              deepseek-chat
+characters:         18527
+candidates:         3295
+requested:          3295
+batches:            0
+cache hits:         0
+applied labels:     0
+low-conf labels:    0
+best-effort labels: 0
+final fallbacks:    745
+wrote unknown:      0
+skipped decisions:  0
+errors:             0
+split retries:      0
+stored unknown fix: 2688
+gender backfilled:  1496
+age backfilled:     1859
+elapsed seconds:    1.8
 
---- Final roleMain distribution ---
-  生         4536
-  净         3978
-  丑         3599
-  旦         2119
+--- roleMain distribution ---
+  生        8261
+  丑        4415
+  净        3193
+  旦        2658
 
---- Top roleSubtype ---
-  文丑          3392
-  净           3281
-  生           2171
-  老生          1149
-  旦           1082
-  武净          649
-  小生          487
-  武生          407
-  青衣          269
-  武旦          211
-  老旦          198
-  花旦          196
-  武丑          193
-  彩旦          104
-  红生          88
-  末           80
-  娃娃生         60
-  外           53
-  副净          37
-  贴旦          22
+--- inference source distribution ---
+  header       7753
+  llm          7341
+  llm_best_effort 2688
+  heuristic_best_effort 745
 
 --- confidence buckets ---
-  <0.5        7434
-  >=0.99      5137
-  0.5-0.7     1467
-  0.7-0.99    194
-
---- Top 15 feature importances ---
-  p_唱                    0.0936
-  p_白                    0.0858
-  action_score           0.0685
-  n_lines                0.0648
-  appearance_count       0.0633
-  co_p_生                 0.0533
-  p_念                    0.0519
-  co_p_旦                 0.0437
-  co_n                   0.0434
-  co_p_净                 0.0429
-  emotion_score          0.0408
-  p_西皮                   0.0359
-  co_p_丑                 0.0355
-  name_len               0.0272
-  p_同白                   0.0262
+  >=0.9    8210
+  0.7-0.9  3849
+  <0.45    3433
+  0.45-0.7 3035

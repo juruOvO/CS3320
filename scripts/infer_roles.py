@@ -1,408 +1,729 @@
-"""Predict roleMain for unlabeled characters via supervised learning.
+"""Infer missing / low-confidence character roles with an LLM.
 
-Pipeline:
-1. Build a feature row for every character (labeled + unlabeled).
-2. Train a RandomForest on the labeled subset (生/旦/净/丑 — drop "杂" and "未知").
-3. Hold-out validation report.
-4. Predict roleMain for unlabeled rows; predicted probability becomes confidence.
-5. Backfill roleSubtype with a small rule table (age/action keywords).
-6. Overwrite data/characters.json.
+This replaces the previous RandomForest pass. Deterministic extraction still
+comes from build_features.py; this script only enriches semantic fields when
+evidence is missing or the existing inference is weak.
+
+Environment:
+    DEEPSEEK_API_KEY    required unless --dry-run is used
+    DEEPSEEK_MODEL      optional, defaults to deepseek-chat
+    DEEPSEEK_BASE_URL   optional, defaults to https://api.deepseek.com
+
+Examples:
+    python scripts/infer_roles.py --dry-run --limit 20
+    python scripts/infer_roles.py --limit 100
+    python scripts/infer_roles.py
 """
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 import time
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
+from typing import Any
 
-import numpy as np
-import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.model_selection import train_test_split
+from llm_client import DeepSeekJsonClient, JsonlCache, LLMConfig, clamp_float, stable_hash
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 SRC = ROOT / "京剧剧本_json"
+CACHE = DATA / "llm_cache" / "role_inference.jsonl"
 
 LABELS = ["生", "旦", "净", "丑"]
+UNKNOWN = "未知"
+ROLE_ENUM = LABELS
+GENDER_ENUM = ["男", "女", UNKNOWN]
+AGE_ENUM = ["少年", "青年", "青壮年", "中年", "老年", UNKNOWN]
+SCHEMA_VERSION = "role-inference-v2"
 
 
-# ===========================================================
-# Feature extraction
-# ===========================================================
-def aggregate_action_dist(lines: list[dict]) -> Counter:
-    return Counter(ln.get("actionType", "") for ln in lines)
-
-
-def is_sing(action_type: str) -> bool:
-    return any(s in action_type for s in ("唱", "板", "腔", "调", "梆子", "导板", "二六", "原板",
-                                          "慢板", "快板", "流水板", "散板", "摇板", "平板", "吹腔"))
-
-
-def is_fast(action_type: str) -> bool:
-    return any(s in action_type for s in ("快板", "流水板", "二六板", "急急风"))
-
-
-def is_slow(action_type: str) -> bool:
-    return any(s in action_type for s in ("慢板", "原板", "平板"))
-
-
-def is_emotional(action_type: str) -> bool:
-    return action_type in ("哭", "笑", "叫头", "三叫头", "哭头", "同笑", "同哭", "同笑", "三笑")
-
-
-NAME_FEAT_TOKENS = {
-    "name_娘": ["娘"],
-    "name_姑": ["姑"],
-    "name_妃": ["妃", "贵妃"],
-    "name_夫人": ["夫人"],
-    "name_氏": ["氏"],
-    "name_姐妹": ["姐", "妹"],
-    "name_皇王": ["皇", "帝", "天子", "万岁"],
-    "name_将": ["将军", "元帅", "都督", "总兵"],
-    "name_丞相": ["丞相", "宰相", "尚书"],
-    "name_老": ["老"],
-    "name_小": ["小"],
-    "name_童儿": ["童", "儿"],
-    "name_军卒兵": ["军", "兵", "卒"],
-    "name_鬼妖": ["鬼", "妖", "怪", "魔"],
-    "name_僧道": ["僧", "和尚", "道士", "尼姑", "道人"],
-    "name_店": ["店家", "酒保", "店小二"],
-    "name_丫鬟": ["丫鬟", "婢", "侍女"],
-    "name_书生": ["书生", "公子", "举人", "秀才"],
-    "name_公主小姐": ["公主", "小姐", "郡主"],
-    "name_龙王神": ["龙王", "玉帝", "神", "仙", "罗汉", "菩萨"],
+ROLE_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "decisions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "charId": {"type": "string"},
+                    "roleMain": {"type": "string", "enum": ROLE_ENUM},
+                    "roleSubtype": {"type": "string"},
+                    "gender": {"type": "string", "enum": GENDER_ENUM},
+                    "ageGroup": {"type": "string", "enum": AGE_ENUM},
+                    "identity": {"type": "string"},
+                    "personalityTags": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "confidence": {"type": "number"},
+                    "evidence": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "reason": {"type": "string"},
+                },
+                "required": [
+                    "charId",
+                    "roleMain",
+                    "roleSubtype",
+                    "gender",
+                    "ageGroup",
+                    "identity",
+                    "personalityTags",
+                    "confidence",
+                    "evidence",
+                    "reason",
+                ],
+            },
+        },
+    },
+    "required": ["decisions"],
 }
 
 
-def name_features(name: str) -> dict[str, int]:
+SYSTEM_PROMPT = """你是一个京剧剧本数据标注员，任务是根据给定证据补全角色语义字段。
+
+规则：
+1. 只依据输入里的剧情、主要角色、台词证据、场次共现和称谓判断，不要凭空编造。
+2. roleMain 必须从：生、旦、净、丑 中选择一个最可能值；不要输出“未知”，证据不足也要给低置信度的最佳判断。
+3. roleSubtype 可写更具体的京剧行当，如老生、小生、武生、青衣、花旦、老旦、武旦、正净、武净、文丑、武丑；不确定时根据 roleMain 写通用子类。
+4. gender 尽量从男、女中推断；ageGroup 尽量从少年、青年、青壮年、中年、老年中推断。实在没有线索时才写“未知”。
+5. confidence 是 0 到 1 的小数。没有直接证据时不要高于 0.55；只是根据名字/同场角色猜测时不要高于 0.7。
+6. evidence 只能摘录或概括输入中出现过的证据，每个角色最多给 3 条。
+7. reason 用一句话解释判断依据。"""
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Infer character roles with an LLM.")
+    parser.add_argument("--dry-run", action="store_true", help="Plan requests but do not call the LLM or write data.")
+    parser.add_argument("--limit", type=int, default=0, help="Maximum number of candidate characters to process; 0 means all.")
+    parser.add_argument("--play-id", default="", help="Only process one playId.")
+    parser.add_argument("--batch-size", type=int, default=8, help="Characters per LLM request.")
+    parser.add_argument("--confidence-threshold", type=float, default=0.7, help="Revisit non-main characters below this confidence.")
+    parser.add_argument("--min-appearances", type=int, default=2, help="Skip minor characters below this appearance count unless they have evidence.")
+    parser.add_argument("--min-llm-confidence", type=float, default=0.45, help="Do not apply non-unknown labels below this LLM confidence.")
+    parser.add_argument("--include-main", action="store_true", help="Also revisit main characters when they are low confidence or unlabeled.")
+    parser.add_argument("--force", action="store_true", help="Reprocess rows already marked as LLM-inferred.")
+    parser.add_argument("--write-unknown", action="store_true", help="Deprecated; roleMain now uses best-effort labels instead of 未知.")
+    parser.add_argument("--overwrite-identity", action="store_true", help="Allow LLM identity to override non-empty existing identity.")
+    parser.add_argument("--fill-only", action="store_true", help="Do not call the LLM; only fill unresolved roleMain with local best-effort labels.")
+    return parser.parse_args()
+
+
+def load_json(path: Path) -> Any:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def write_json(path: Path, data: Any) -> None:
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def load_play_jsons() -> dict[str, dict]:
+    if not SRC.exists():
+        print(f"  ! {SRC} not found; using characters.json evidence only", flush=True)
+        return {}
     out = {}
-    for key, tokens in NAME_FEAT_TOKENS.items():
-        out[key] = int(any(t in name for t in tokens))
-    out["name_len"] = len(name)
-    return out
-
-
-def co_role_dist(char_name: str, play_chars: list[dict], play_scenes: list[dict],
-                 known_role_map: dict[str, str]) -> dict[str, float]:
-    """Distribution of labeled co-actors' roleMain that appear in the same scenes."""
-    own_scenes: set[int] = set()
-    for sc in play_scenes:
-        if char_name in sc.get("characters", []):
-            own_scenes.add(sc["sceneNum"])
-    co_names: set[str] = set()
-    for sc in play_scenes:
-        if sc["sceneNum"] in own_scenes:
-            for c in sc.get("characters", []):
-                if c != char_name:
-                    co_names.add(c)
-    co_roles = Counter(known_role_map[c] for c in co_names if c in known_role_map)
-    total = sum(co_roles.values())
-    if total == 0:
-        return {f"co_p_{lab}": 0.0 for lab in LABELS} | {"co_n": 0}
-    out = {f"co_p_{lab}": co_roles.get(lab, 0) / total for lab in LABELS}
-    out["co_n"] = total
-    return out
-
-
-def featurize_one(char: dict, play_json: dict, known_role_map: dict[str, str]) -> dict:
-    name = char["name"]
-    lines = play_json.get("lines", [])
-    own_lines = [ln for ln in lines if ln.get("character") == name]
-    n = len(own_lines)
-    denom = max(n, 1)
-
-    act = aggregate_action_dist(own_lines)
-    n_sing = sum(v for a, v in act.items() if is_sing(a))
-    n_fast = sum(v for a, v in act.items() if is_fast(a))
-    n_slow = sum(v for a, v in act.items() if is_slow(a))
-    n_emo = sum(v for a, v in act.items() if is_emotional(a))
-
-    feat = {
-        "n_lines": n,
-        "p_白": act.get("白", 0) / denom,
-        "p_同白": act.get("同白", 0) / denom,
-        "p_唱": n_sing / denom,
-        "p_念": act.get("念", 0) / denom,
-        "p_引子": act.get("引子", 0) / denom,
-        "p_快板": n_fast / denom,
-        "p_慢板": n_slow / denom,
-        "p_情感": n_emo / denom,
-        "p_西皮": sum(v for a, v in act.items() if "西皮" in a) / denom,
-        "p_二黄": sum(v for a, v in act.items() if "二黄" in a) / denom,
-        "p_笑": act.get("笑", 0) / denom,
-        "p_哭": act.get("哭", 0) / denom,
-        "p_叫头": (act.get("叫头", 0) + act.get("三叫头", 0)) / denom,
-        "action_score": char.get("actionScore", 0),
-        "emotion_score": char.get("emotionScore", 0),
-        "appearance_count": char.get("appearanceCount", 0),
-        "is_main": int(char.get("isMainCharacter", False)),
-    }
-    feat.update(name_features(name))
-
-    # Heuristic attrs
-    feat["g_male"] = int(char.get("gender") == "男")
-    feat["g_female"] = int(char.get("gender") == "女")
-    feat["age_老"] = int(char.get("ageGroup") == "老年")
-    feat["age_少"] = int(char.get("ageGroup") == "少年")
-    feat["age_青"] = int(char.get("ageGroup") in ("青年", "青壮年"))
-    feat["age_中"] = int(char.get("ageGroup") == "中年")
-
-    # Identity one-hot (compact list)
-    ident = char.get("identity", "其他")
-    for key in ("帝王", "王侯", "武将", "文臣", "夫人", "丫鬟", "书生", "公主",
-                "僧道", "士兵", "市井", "店家", "神仙", "妖魔", "母亲", "媒婆"):
-        feat[f"id_{key}"] = int(ident == key)
-
-    # Co-actor distribution
-    feat.update(co_role_dist(name, [], play_json.get("scenes", []), known_role_map))
-
-    return feat
-
-
-# ===========================================================
-# Sub-type rules (used after roleMain prediction)
-# ===========================================================
-def assign_subtype(role_main: str, feat: dict, name: str) -> str:
-    if role_main == "生":
-        if feat.get("age_老") or feat.get("name_老"):
-            return "老生"
-        if feat.get("age_少") or feat.get("name_童儿"):
-            return "娃娃生"
-        if feat.get("action_score", 0) > 0.18:
-            return "武生"
-        if feat.get("age_青") or feat.get("name_小") or feat.get("name_书生"):
-            return "小生"
-        return "生"
-    if role_main == "旦":
-        if feat.get("age_老") or feat.get("name_老"):
-            return "老旦"
-        if feat.get("action_score", 0) > 0.18:
-            return "武旦"
-        if feat.get("name_丫鬟") or feat.get("name_姐妹") or feat.get("name_小"):
-            return "花旦"
-        if feat.get("name_娘") or feat.get("name_媒婆"):
-            return "彩旦"
-        if feat.get("name_夫人") or feat.get("name_氏"):
-            return "青衣"
-        return "旦"
-    if role_main == "净":
-        if feat.get("action_score", 0) > 0.18:
-            return "武净"
-        if feat.get("name_鬼妖"):
-            return "净"
-        return "净"
-    if role_main == "丑":
-        if feat.get("action_score", 0) > 0.18:
-            return "武丑"
-        return "文丑"
-    return role_main
-
-
-# ===========================================================
-# Main
-# ===========================================================
-def main():
-    print("Loading characters.json + plays...", flush=True)
-    chars = json.loads((DATA / "characters.json").read_text(encoding="utf-8"))
-    plays = json.loads((DATA / "plays.json").read_text(encoding="utf-8"))
-
-    play_jsons: dict[str, dict] = {}
     for p in SRC.rglob("*.json"):
         if p.name.startswith("_"):
             continue
-        d = json.loads(p.read_text(encoding="utf-8"))
-        play_jsons[d["playId"]] = d
-    print(f"  loaded {len(play_jsons)} plays, {len(chars)} characters", flush=True)
-
-    # Build per-play known role map (for co-occurrence features)
-    play_role_map: dict[str, dict[str, str]] = {}
-    for c in chars:
-        if c["roleMain"] in LABELS:
-            play_role_map.setdefault(c["playId"], {})[c["name"]] = c["roleMain"]
-
-    # ===========================================================
-    # Feature extraction
-    # ===========================================================
-    print("Extracting features...", flush=True)
-    t0 = time.time()
-    rows = []
-    for i, c in enumerate(chars):
-        pid = c["playId"]
-        play = play_jsons.get(pid, {})
-        known = play_role_map.get(pid, {})
-        # When featurizing labeled rows, exclude their own label from co-actor map
-        if c["name"] in known:
-            local_known = {k: v for k, v in known.items() if k != c["name"]}
-        else:
-            local_known = known
-        feat = featurize_one(c, play, local_known)
-        feat["_id"] = c["id"]
-        feat["_label"] = c["roleMain"] if c["roleMain"] in LABELS else ""
-        rows.append(feat)
-        if (i + 1) % 2000 == 0:
-            print(f"  {i+1}/{len(chars)}  elapsed={time.time()-t0:.1f}s", flush=True)
-    df = pd.DataFrame(rows)
-    print(f"  feature matrix: {df.shape}  ({time.time()-t0:.1f}s)", flush=True)
-
-    # Drop features that are *derived from* roleMain in build_features.py,
-    # otherwise they leak the label and the model collapses on unlabeled rows
-    # (gender/age/some identity buckets are partly back-mapped from the
-    # subtype, so they are perfectly aligned with labels in the training set
-    # but ~empty for unlabeled minor characters).
-    LEAKY_FEATURES = {
-        "g_male", "g_female",
-        "age_老", "age_少", "age_青", "age_中",
-        "id_市井",   # 丑 fallback in infer_identity
-        "id_母亲",   # 老旦 fallback
-        "id_媒婆",   # 彩旦 fallback
-    }
-    feature_cols = [c for c in df.columns if not c.startswith("_") and c not in LEAKY_FEATURES]
-    print(f"  using {len(feature_cols)} features ({len(LEAKY_FEATURES)} dropped as leaky)", flush=True)
-    X_all = df[feature_cols].astype(float).values
-
-    # ===========================================================
-    # Train on labeled subset
-    # ===========================================================
-    labeled_mask = df["_label"].isin(LABELS).values
-    X_lab = X_all[labeled_mask]
-    y_lab = df.loc[labeled_mask, "_label"].values
-    print(f"\nLabeled rows: {len(y_lab)}", flush=True)
-    print(f"Label dist: {dict(Counter(y_lab))}", flush=True)
-
-    X_train, X_val, y_train, y_val = train_test_split(
-        X_lab, y_lab, test_size=0.2, random_state=42, stratify=y_lab
-    )
-
-    clf = RandomForestClassifier(
-        n_estimators=300,
-        max_depth=None,
-        min_samples_leaf=2,
-        class_weight="balanced",
-        random_state=42,
-        n_jobs=-1,
-    )
-    print("Training RandomForest...", flush=True)
-    clf.fit(X_train, y_train)
-
-    val_pred = clf.predict(X_val)
-    val_acc = (val_pred == y_val).mean()
-    print(f"\nValidation accuracy: {val_acc:.4f}", flush=True)
-    print("\nClassification report (validation):", flush=True)
-    print(classification_report(y_val, val_pred, labels=LABELS, zero_division=0), flush=True)
-    print("Confusion matrix (rows=true, cols=pred; order: 生/旦/净/丑):", flush=True)
-    print(confusion_matrix(y_val, val_pred, labels=LABELS), flush=True)
-
-    # Feature importance
-    importances = sorted(
-        zip(feature_cols, clf.feature_importances_), key=lambda x: -x[1]
-    )
-    print("\nTop 15 feature importances:", flush=True)
-    for n, imp in importances[:15]:
-        print(f"  {n:<22} {imp:.4f}", flush=True)
-
-    # ===========================================================
-    # Refit on full labeled set, then predict on unlabeled
-    # ===========================================================
-    print("\nRefitting on full labeled set...", flush=True)
-    clf.fit(X_lab, y_lab)
-
-    unlabeled_mask = ~labeled_mask
-    n_unlab = unlabeled_mask.sum()
-    print(f"Unlabeled rows to predict: {n_unlab}", flush=True)
-
-    proba = clf.predict_proba(X_all[unlabeled_mask])
-    pred = clf.classes_[proba.argmax(axis=1)]
-    pred_conf = proba.max(axis=1)
-
-    # Write back
-    label_idx_in_chars = np.where(unlabeled_mask)[0]
-    for arr_pos, idx in enumerate(label_idx_in_chars):
-        c = chars[idx]
-        feat_row = df.iloc[idx].to_dict()
-        c["roleMain"] = pred[arr_pos]
-        c["confidence"] = round(float(pred_conf[arr_pos]), 4)
-        c["roleSubtype"] = assign_subtype(pred[arr_pos], feat_row, c["name"])
-        c["roleClean"] = c["roleSubtype"]  # display-friendly cleaned label
-
-    # Also assign more specific subtypes for some labeled characters that have only 主行当 (no sub)
-    for idx, c in enumerate(chars):
-        if not labeled_mask[idx]:
+        try:
+            d = load_json(p)
+        except Exception as e:
+            print(f"  ! failed to read {p}: {e}", flush=True)
             continue
-        if c["roleSubtype"] in ("生", "旦", "净", "丑") and c["roleMain"] in LABELS:
-            feat_row = df.iloc[idx].to_dict()
-            c["roleSubtype"] = assign_subtype(c["roleMain"], feat_row, c["name"])
+        out[d["playId"]] = d
+    return out
 
-    # ===========================================================
-    # Backfill gender / ageGroup using the now-known 行当.
-    # These were derived in build_features.py BEFORE minor characters had a
-    # 行当 (it's inferred here), so ~9000 came out "未知". Now re-derive them
-    # with the same heuristics — only filling values still "未知", never
-    # overriding one that was already determined.
-    # ===========================================================
-    from build_features import infer_gender, infer_age  # same heuristic table
+
+def confidence_of(c: dict) -> float:
+    return clamp_float(c.get("confidence", 0.0))
+
+
+def is_header_labeled(c: dict) -> bool:
+    return bool(c.get("isMainCharacter")) and c.get("roleMain") in LABELS and confidence_of(c) >= 0.95
+
+
+def ensure_source_metadata(chars: list[dict]) -> None:
+    for c in chars:
+        if c.get("roleInferenceSource"):
+            continue
+        if c.get("isMainCharacter") and (c.get("roleTypeRaw") or c.get("roleMain") in LABELS):
+            c["roleInferenceSource"] = "header"
+        elif (not c.get("isMainCharacter")) and c.get("roleMain") in LABELS:
+            # Existing repos may already contain RandomForest-era predictions.
+            c["roleInferenceSource"] = "legacy"
+
+
+def needs_llm(c: dict, args: argparse.Namespace) -> bool:
+    if c.get("roleInferenceSource") == "llm" and not args.force:
+        return False
+    if args.play_id and c.get("playId") != args.play_id:
+        return False
+    if is_header_labeled(c) and not args.include_main:
+        return False
+    if c.get("appearanceCount", 0) < args.min_appearances and not c.get("evidence"):
+        return False
+
+    role_main = c.get("roleMain") or ""
+    if role_main not in LABELS:
+        return True
+    return (not c.get("isMainCharacter")) and confidence_of(c) < args.confidence_threshold
+
+
+def own_lines_for(name: str, play: dict, limit: int = 6) -> list[dict]:
+    lines = [
+        ln for ln in play.get("lines", [])
+        if ln.get("character") == name and ln.get("content", "").strip()
+    ]
+    lines.sort(key=lambda ln: len(ln.get("content", "")), reverse=True)
+    out = []
+    seen = set()
+    for ln in lines:
+        content = ln.get("content", "").strip()
+        if content in seen:
+            continue
+        seen.add(content)
+        out.append({
+            "sceneNum": ln.get("sceneNum", 0),
+            "actionType": ln.get("actionType", ""),
+            "content": content[:180],
+        })
+        if len(out) >= limit:
+            break
+    return out
+
+
+def action_summary(name: str, play: dict) -> list[dict]:
+    ct = Counter(
+        ln.get("actionType", "")
+        for ln in play.get("lines", [])
+        if ln.get("character") == name
+    )
+    return [{"actionType": k, "count": v} for k, v in ct.most_common(8) if k]
+
+
+def scene_context(name: str, play: dict, char_by_name: dict[str, dict], limit: int = 5) -> list[dict]:
+    out = []
+    for sc in play.get("scenes", []):
+        members = sc.get("characters", [])
+        if name not in members:
+            continue
+        coactors = []
+        for other in members:
+            if other == name:
+                continue
+            oc = char_by_name.get(other, {})
+            coactors.append({
+                "name": other,
+                "roleMain": oc.get("roleMain", ""),
+                "roleSubtype": oc.get("roleSubtype", ""),
+                "identity": oc.get("identity", ""),
+            })
+        out.append({
+            "sceneNum": sc.get("sceneNum", 0),
+            "sceneTitle": sc.get("sceneTitle", ""),
+            "coactors": coactors[:12],
+        })
+        if len(out) >= limit:
+            break
+    return out
+
+
+def compact_main_characters(play: dict) -> list[dict]:
+    return [
+        {
+            "name": c.get("name", ""),
+            "roleTypeRaw": c.get("roleTypeRaw", ""),
+        }
+        for c in play.get("mainCharacters", [])[:30]
+    ]
+
+
+def build_candidate_context(c: dict, play: dict, char_by_name: dict[str, dict]) -> dict:
+    name = c["name"]
+    return {
+        "charId": c["id"],
+        "name": name,
+        "current": {
+            "roleMain": c.get("roleMain", ""),
+            "roleSubtype": c.get("roleSubtype", ""),
+            "roleTypeRaw": c.get("roleTypeRaw", ""),
+            "gender": c.get("gender", ""),
+            "ageGroup": c.get("ageGroup", ""),
+            "identity": c.get("identity", ""),
+            "confidence": c.get("confidence", 0),
+            "isMainCharacter": c.get("isMainCharacter", False),
+        },
+        "stats": {
+            "appearanceCount": c.get("appearanceCount", 0),
+            "actionScore": c.get("actionScore", 0),
+            "emotionScore": c.get("emotionScore", 0),
+        },
+        "existingEvidence": c.get("evidence", [])[:3],
+        "actionSummary": action_summary(name, play),
+        "lineSamples": own_lines_for(name, play),
+        "sceneContext": scene_context(name, play, char_by_name),
+    }
+
+
+def build_batch_payload(play_id: str, batch: list[dict], play: dict, chars_by_play: list[dict]) -> dict:
+    char_by_name = {c["name"]: c for c in chars_by_play}
+    return {
+        "schemaVersion": SCHEMA_VERSION,
+        "play": {
+            "playId": play_id,
+            "title": play.get("title", ""),
+            "plot": (play.get("plot") or play.get("summary") or "")[:900],
+            "notes": (play.get("notes") or "")[:500],
+            "mainCharacters": compact_main_characters(play),
+        },
+        "knownCharacters": [
+            {
+                "name": c.get("name", ""),
+                "roleMain": c.get("roleMain", ""),
+                "roleSubtype": c.get("roleSubtype", ""),
+                "identity": c.get("identity", ""),
+            }
+            for c in chars_by_play
+            if c.get("roleMain") in LABELS and confidence_of(c) >= 0.8
+        ][:40],
+        "candidates": [build_candidate_context(c, play, char_by_name) for c in batch],
+    }
+
+
+def response_for_batch(client: DeepSeekJsonClient, cache: JsonlCache, payload: dict) -> tuple[dict, bool]:
+    key = stable_hash({
+        "task": SCHEMA_VERSION,
+        "model": client.config.model,
+        "payload": payload,
+    })
+    cached = cache.get(key)
+    if cached is not None:
+        return cached, True
+
+    user = "请为 candidates 中的每个角色补全字段，并严格返回 JSON。输入如下：\n" + json.dumps(payload, ensure_ascii=False)
+    value = client.chat_json(
+        system=SYSTEM_PROMPT,
+        user=user,
+        schema_name="character_role_inference",
+        schema=ROLE_SCHEMA,
+    )
+    cache.set(key, value, meta={"model": client.config.model, "playId": payload["play"]["playId"]})
+    return value, False
+
+
+def process_role_batch(
+    *,
+    client: DeepSeekJsonClient,
+    cache: JsonlCache,
+    batch: list[dict],
+    pid: str,
+    play: dict,
+    chars_by_play: list[dict],
+    char_by_id: dict[str, dict],
+    args: argparse.Namespace,
+    stats: Counter,
+    start_label: str,
+) -> None:
+    payload = build_batch_payload(pid, batch, play, chars_by_play)
+    stats["batches"] += 1
+    try:
+        raw, from_cache = response_for_batch(client, cache, payload)
+        if from_cache:
+            stats["cache_hits"] += 1
+        decisions = valid_decisions(raw, {c["id"] for c in batch})
+        for d in decisions:
+            status = apply_decision(char_by_id[d["charId"]], d, args)
+            stats[status] += 1
+        missing = len(batch) - len(decisions)
+        stats["skipped"] += max(missing, 0)
+    except Exception as e:
+        if len(batch) > 1:
+            stats["split_retries"] += 1
+            mid = max(1, len(batch) // 2)
+            print(
+                f"  ! LLM batch failed play={pid} start={start_label}; split {len(batch)} -> {mid}+{len(batch) - mid}: {e}",
+                flush=True,
+            )
+            process_role_batch(
+                client=client,
+                cache=cache,
+                batch=batch[:mid],
+                pid=pid,
+                play=play,
+                chars_by_play=chars_by_play,
+                char_by_id=char_by_id,
+                args=args,
+                stats=stats,
+                start_label=f"{start_label}.a",
+            )
+            process_role_batch(
+                client=client,
+                cache=cache,
+                batch=batch[mid:],
+                pid=pid,
+                play=play,
+                chars_by_play=chars_by_play,
+                char_by_id=char_by_id,
+                args=args,
+                stats=stats,
+                start_label=f"{start_label}.b",
+            )
+            return
+
+        stats["errors"] += 1
+        print(f"  ! LLM single failed play={pid} char={batch[0].get('name')} start={start_label}: {e}", flush=True)
+
+
+def valid_decisions(raw: dict, expected_ids: set[str]) -> list[dict]:
+    out = []
+    for d in raw.get("decisions", []):
+        if not isinstance(d, dict):
+            continue
+        cid = d.get("charId")
+        if cid not in expected_ids:
+            continue
+        role_main = d.get("roleMain") if d.get("roleMain") in ROLE_ENUM else UNKNOWN
+        gender = d.get("gender") if d.get("gender") in GENDER_ENUM else UNKNOWN
+        age = d.get("ageGroup") if d.get("ageGroup") in AGE_ENUM else UNKNOWN
+        tags = d.get("personalityTags") if isinstance(d.get("personalityTags"), list) else []
+        evidence = d.get("evidence") if isinstance(d.get("evidence"), list) else []
+        out.append({
+            "charId": cid,
+            "roleMain": role_main,
+            "roleSubtype": str(d.get("roleSubtype") or UNKNOWN),
+            "gender": gender,
+            "ageGroup": age,
+            "identity": str(d.get("identity") or UNKNOWN),
+            "personalityTags": [str(t) for t in tags[:5] if str(t).strip()],
+            "confidence": clamp_float(d.get("confidence")),
+            "evidence": [str(e)[:180] for e in evidence[:3] if str(e).strip()],
+            "reason": str(d.get("reason") or "")[:300],
+        })
+    return out
+
+
+def fallback_subtype(role_main: str, c: dict) -> str:
+    name = c.get("name", "")
+    age = c.get("ageGroup", "")
+    action_score = float(c.get("actionScore") or 0)
+    if role_main == "生":
+        if age == "老年" or "老" in name:
+            return "老生"
+        if age == "少年" or "童" in name or "儿" in name:
+            return "娃娃生"
+        if action_score > 0.18:
+            return "武生"
+        if age in ("青年", "青壮年"):
+            return "小生"
+        return "生"
+    if role_main == "旦":
+        if age == "老年" or "老" in name:
+            return "老旦"
+        if action_score > 0.18:
+            return "武旦"
+        if any(tok in name for tok in ("夫人", "娘娘", "皇后", "母")):
+            return "青衣"
+        if any(tok in name for tok in ("丫鬟", "小姐", "公主", "姑娘")):
+            return "花旦"
+        return "旦"
+    if role_main == "净":
+        return "武净" if action_score > 0.18 else "净"
+    if role_main == "丑":
+        return "武丑" if action_score > 0.18 else "文丑"
+    return UNKNOWN
+
+
+def best_effort_role_main(c: dict, decision: dict | None = None) -> str:
+    name = c.get("name", "")
+    gender = (decision or {}).get("gender") or c.get("gender", "")
+    identity = (decision or {}).get("identity") or c.get("identity", "")
+    action_score = float(c.get("actionScore") or 0)
+
+    female_tokens = ("夫人", "小姐", "公主", "皇后", "娘娘", "娘", "母", "妃", "姬", "氏", "嫂", "姐", "妹", "女", "丫鬟", "婢", "婆")
+    child_tokens = ("童", "儿", "娃", "孩")
+    clown_tokens = ("家院", "院子", "门子", "报子", "旗牌", "衙役", "皂隶", "公差", "店家", "酒保", "小二", "艄公", "禁卒", "更夫", "丑", "龙套")
+    painted_tokens = ("曹操", "张飞", "李逵", "项羽", "董卓", "孟获", "周仓", "典韦", "许褚", "尉迟", "黑", "虎", "霸王", "番王", "大王")
+
+    if any(tok in name for tok in female_tokens) or gender == "女":
+        return "旦"
+    if any(tok in name for tok in clown_tokens) or identity in ("仆人", "市井人物"):
+        return "丑"
+    if any(tok in name for tok in painted_tokens) or identity in ("妖魔", "强盗"):
+        return "净"
+    if action_score > 0.22 and any(tok in name for tok in ("将", "帅", "王", "贼", "神", "妖", "魔")):
+        return "净"
+    if any(tok in name for tok in child_tokens):
+        return "生"
+    return "生"
+
+
+def apply_best_effort_role(c: dict, decision: dict | None, source: str) -> str:
+    role_main = best_effort_role_main(c, decision)
+    subtype = fallback_subtype(role_main, c)
+    conf = clamp_float((decision or {}).get("confidence"), 0.35)
+    if conf <= 0:
+        conf = 0.35
+    c["roleMain"] = role_main
+    c["roleSubtype"] = subtype
+    c["roleClean"] = subtype
+    c["confidence"] = round(min(conf, 0.44), 4)
+    c["roleInferenceSource"] = source
+    if decision:
+        c["llmRoleInference"] = {
+            "roleMain": decision.get("roleMain", UNKNOWN),
+            "roleSubtype": decision.get("roleSubtype", UNKNOWN),
+            "gender": decision.get("gender", UNKNOWN),
+            "ageGroup": decision.get("ageGroup", UNKNOWN),
+            "identity": decision.get("identity", UNKNOWN),
+            "confidence": decision.get("confidence", conf),
+            "reason": decision.get("reason", ""),
+        }
+        c["llmEvidence"] = decision.get("evidence", [])
+        c["llmReason"] = decision.get("reason", "")
+    else:
+        c.setdefault("llmRoleInference", {
+            "roleMain": role_main,
+            "roleSubtype": subtype,
+            "gender": c.get("gender", UNKNOWN),
+            "ageGroup": c.get("ageGroup", UNKNOWN),
+            "identity": c.get("identity", UNKNOWN),
+            "confidence": c["confidence"],
+            "reason": "LLM 未返回可用结果，使用本地低置信度兜底推断。",
+        })
+        c.setdefault("llmEvidence", c.get("evidence", [])[:3])
+        c.setdefault("llmReason", "LLM 未返回可用结果，使用本地低置信度兜底推断。")
+    return "best_effort"
+
+
+def apply_decision(c: dict, d: dict, args: argparse.Namespace) -> str:
+    role_main = d["roleMain"]
+    conf = d["confidence"]
+    applied = "skipped"
+
+    c["llmRoleInference"] = {
+        "roleMain": role_main,
+        "roleSubtype": d["roleSubtype"],
+        "gender": d["gender"],
+        "ageGroup": d["ageGroup"],
+        "identity": d["identity"],
+        "confidence": conf,
+        "reason": d["reason"],
+    }
+    c["llmEvidence"] = d["evidence"]
+    c["llmReason"] = d["reason"]
+
+    if role_main in LABELS:
+        c["roleMain"] = role_main
+        subtype = d["roleSubtype"]
+        if not subtype or subtype == UNKNOWN:
+            subtype = fallback_subtype(role_main, c)
+        c["roleSubtype"] = subtype
+        c["roleClean"] = subtype
+        c["confidence"] = round(conf, 4)
+        c["roleInferenceSource"] = "llm" if conf >= args.min_llm_confidence else "llm_low_confidence"
+        applied = "label" if conf >= args.min_llm_confidence else "low_confidence_label"
+    else:
+        applied = apply_best_effort_role(c, d, "llm_best_effort")
+
+    if d["gender"] != UNKNOWN:
+        c["gender"] = d["gender"]
+    if d["ageGroup"] != UNKNOWN:
+        c["ageGroup"] = d["ageGroup"]
+    if d["identity"] != UNKNOWN and (
+        args.overwrite_identity or c.get("identity") in ("", UNKNOWN, "其他")
+    ):
+        c["identity"] = d["identity"]
+    if d["personalityTags"]:
+        c["personalityTags"] = d["personalityTags"]
+
+    return applied
+
+
+def apply_stored_unknowns(chars: list[dict], args: argparse.Namespace) -> int:
+    """Turn prior LLM unknown decisions into best-effort labels without API calls."""
+    applied = 0
+    for c in chars:
+        if c.get("roleMain") in LABELS:
+            continue
+        stored = c.get("llmRoleInference")
+        if not isinstance(stored, dict):
+            continue
+        if stored.get("roleMain") != UNKNOWN and stored.get("roleMain") not in ("", None):
+            continue
+        apply_best_effort_role(c, stored, "llm_best_effort")
+        applied += 1
+    return applied
+
+
+def fill_remaining_roles(chars: list[dict]) -> int:
+    filled = 0
+    for c in chars:
+        if c.get("roleMain") in LABELS:
+            continue
+        apply_best_effort_role(c, None, "heuristic_best_effort")
+        filled += 1
+    return filled
+
+
+def backfill_gender_age(chars: list[dict]) -> tuple[int, int]:
+    try:
+        from build_features import infer_age, infer_gender
+    except Exception as e:
+        print(f"  ! cannot import build_features fallback rules: {e}", flush=True)
+        return 0, 0
 
     gender_filled = 0
     age_filled = 0
     for c in chars:
-        if c.get("gender") == "未知":
+        if c.get("gender") in ("", UNKNOWN):
             g = infer_gender(c["name"], c.get("roleMain", ""), c.get("roleSubtype", ""))
-            if g != "未知":
+            if g and g != UNKNOWN:
                 c["gender"] = g
                 gender_filled += 1
-        if c.get("ageGroup") == "未知":
+        if c.get("ageGroup") in ("", UNKNOWN):
             a = infer_age(c["name"], c.get("roleMain", ""), c.get("roleSubtype", ""))
-            if a != "未知":
+            if a and a != UNKNOWN:
                 c["ageGroup"] = a
                 age_filled += 1
-    print(f"Backfilled gender for {gender_filled}, ageGroup for {age_filled} characters "
-          f"using inferred 行当", flush=True)
+    return gender_filled, age_filled
 
-    # ===========================================================
-    # Persist + report
-    # ===========================================================
-    (DATA / "characters.json").write_text(
-        json.dumps(chars, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
 
-    final_role_main = Counter(c["roleMain"] for c in chars)
-    final_role_sub = Counter(c["roleSubtype"] for c in chars)
-    conf_buckets = Counter()
-    for c in chars:
-        if c["confidence"] >= 0.99:
-            conf_buckets[">=0.99"] += 1
-        elif c["confidence"] >= 0.7:
-            conf_buckets["0.7-0.99"] += 1
-        elif c["confidence"] >= 0.5:
-            conf_buckets["0.5-0.7"] += 1
-        else:
-            conf_buckets["<0.5"] += 1
+def confidence_bucket(conf: float) -> str:
+    if conf >= 0.9:
+        return ">=0.9"
+    if conf >= 0.7:
+        return "0.7-0.9"
+    if conf >= 0.45:
+        return "0.45-0.7"
+    return "<0.45"
 
+
+def write_report(chars: list[dict], stats: Counter, config: LLMConfig, elapsed: float, *, write_file: bool = True) -> None:
+    role_dist = Counter(c.get("roleMain") or "<empty>" for c in chars)
+    source_dist = Counter(c.get("roleInferenceSource") or ("header" if is_header_labeled(c) else "rule") for c in chars)
+    conf_dist = Counter(confidence_bucket(confidence_of(c)) for c in chars)
     report = [
-        "=== infer_roles.py 报告 ===",
-        f"Total characters:     {len(chars)}",
-        f"Labeled (train pool): {labeled_mask.sum()}",
-        f"Unlabeled (predicted):{n_unlab}",
-        f"Validation accuracy:  {val_acc:.4f}",
+        "=== infer_roles.py LLM report ===",
+        f"model:              {config.model}",
+        f"characters:         {len(chars)}",
+        f"candidates:         {stats['candidates']}",
+        f"requested:          {stats['requested']}",
+        f"batches:            {stats['batches']}",
+        f"cache hits:         {stats['cache_hits']}",
+        f"applied labels:     {stats['label']}",
+        f"low-conf labels:    {stats['low_confidence_label']}",
+        f"best-effort labels: {stats['best_effort']}",
+        f"final fallbacks:    {stats['final_fallbacks']}",
+        f"wrote unknown:      {stats['unknown']}",
+        f"skipped decisions:  {stats['skipped']}",
+        f"errors:             {stats['errors']}",
+        f"split retries:      {stats['split_retries']}",
+        f"stored unknown fix: {stats['stored_unknowns']}",
+        f"gender backfilled:  {stats['gender_backfilled']}",
+        f"age backfilled:     {stats['age_backfilled']}",
+        f"elapsed seconds:    {elapsed:.1f}",
         "",
-        "--- Final roleMain distribution ---",
+        "--- roleMain distribution ---",
     ]
-    for k, v in final_role_main.most_common():
-        report.append(f"  {(k or '<empty>'):<8}  {v}")
-    report.append("\n--- Top roleSubtype ---")
-    for k, v in final_role_sub.most_common(20):
-        report.append(f"  {(k or '<empty>'):<10}  {v}")
+    for k, v in role_dist.most_common():
+        report.append(f"  {k:<8} {v}")
+    report.append("\n--- inference source distribution ---")
+    for k, v in source_dist.most_common():
+        report.append(f"  {k:<12} {v}")
     report.append("\n--- confidence buckets ---")
-    for k, v in conf_buckets.most_common():
-        report.append(f"  {k:<10}  {v}")
-    report.append("\n--- Top 15 feature importances ---")
-    for n, imp in importances[:15]:
-        report.append(f"  {n:<22} {imp:.4f}")
-    (DATA / "_infer_roles_report.txt").write_text("\n".join(report), encoding="utf-8")
-    print("\n".join(report[-10:]))
-    print(f"\nWrote: {DATA/'characters.json'}")
+    for k, v in conf_dist.most_common():
+        report.append(f"  {k:<8} {v}")
+    if write_file:
+        (DATA / "_infer_roles_report.txt").write_text("\n".join(report), encoding="utf-8")
+    print("\n".join(report), flush=True)
+
+
+def main() -> int:
+    args = parse_args()
+    t0 = time.time()
+    print("Loading characters and plays ...", flush=True)
+    chars = load_json(DATA / "characters.json")
+    plays = load_json(DATA / "plays.json")
+    play_meta = {p["id"]: p for p in plays}
+    play_jsons = load_play_jsons()
+    ensure_source_metadata(chars)
+    stored_unknowns = apply_stored_unknowns(chars, args)
+    print(f"  plays={len(plays)} play_jsons={len(play_jsons)} characters={len(chars)}", flush=True)
+
+    candidates = [c for c in chars if needs_llm(c, args)]
+    if args.limit > 0:
+        candidates = candidates[:args.limit]
+    stats: Counter = Counter(candidates=len(candidates), requested=len(candidates), stored_unknowns=stored_unknowns)
+    print(f"  LLM candidates: {len(candidates)}", flush=True)
+
+    if args.fill_only:
+        stats["final_fallbacks"] = fill_remaining_roles(chars)
+        gender_filled, age_filled = backfill_gender_age(chars)
+        stats["gender_backfilled"] = gender_filled
+        stats["age_backfilled"] = age_filled
+        write_json(DATA / "characters.json", chars)
+        write_report(chars, stats, LLMConfig.from_env(), time.time() - t0)
+        print(f"Fill-only mode wrote: {DATA / 'characters.json'}", flush=True)
+        return 0
+
+    if args.dry_run:
+        for c in candidates[:10]:
+            print(f"  dry-run candidate: {c['playId']} {c['name']} role={c.get('roleMain', '')} conf={c.get('confidence', 0)}")
+        config = LLMConfig.from_env()
+        write_report(chars, stats, config, time.time() - t0, write_file=False)
+        print("Dry run: no LLM calls and no files were changed.", flush=True)
+        return 0
+
+    client = DeepSeekJsonClient()
+    cache = JsonlCache(CACHE)
+
+    chars_by_play: dict[str, list[dict]] = defaultdict(list)
+    for c in chars:
+        chars_by_play[c["playId"]].append(c)
+    char_by_id = {c["id"]: c for c in chars}
+
+    grouped: dict[str, list[dict]] = defaultdict(list)
+    for c in candidates:
+        grouped[c["playId"]].append(c)
+
+    for play_i, (pid, group) in enumerate(grouped.items(), 1):
+        play = play_jsons.get(pid) or play_meta.get(pid, {"id": pid, "title": pid})
+        for start in range(0, len(group), args.batch_size):
+            batch = group[start:start + args.batch_size]
+            process_role_batch(
+                client=client,
+                cache=cache,
+                batch=batch,
+                pid=pid,
+                play=play,
+                chars_by_play=chars_by_play.get(pid, []),
+                char_by_id=char_by_id,
+                args=args,
+                stats=stats,
+                start_label=str(start),
+            )
+            if stats["batches"] % 10 == 0:
+                print(
+                    f"  batches={stats['batches']} applied={stats['label']} "
+                    f"cache={stats['cache_hits']} errors={stats['errors']}",
+                    flush=True,
+                )
+        print(f"[{play_i}/{len(grouped)}] play={pid} done", flush=True)
+
+    stats["final_fallbacks"] = fill_remaining_roles(chars)
+    gender_filled, age_filled = backfill_gender_age(chars)
+    stats["gender_backfilled"] = gender_filled
+    stats["age_backfilled"] = age_filled
+
+    write_json(DATA / "characters.json", chars)
+    write_report(chars, stats, client.config, time.time() - t0)
+    print(f"Wrote: {DATA / 'characters.json'}", flush=True)
+    return 0
 
 
 if __name__ == "__main__":

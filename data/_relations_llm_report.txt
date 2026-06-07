@@ -1,0 +1,37 @@
+=== augment_relations_llm.py report ===
+model:              deepseek-chat
+edges:              61664
+candidates:         0
+requested:          0
+batches:            0
+cache hits:         0
+specific labels:    0
+kept common:        0
+unknown:            0
+low confidence:     0
+errors:             0
+split retries:      0
+metadata fixed:     110
+elapsed seconds:    2.5
+
+--- relationType distribution ---
+  共现       53067
+  敌对       2310
+  兄弟       1626
+  夫妻       933
+  主仆       886
+  同僚       749
+  父子       659
+  君臣       445
+  父女       324
+  朋友       235
+  姐妹       150
+  亲属       97
+  母女       95
+  母子       49
+  师徒       39
+
+--- inference source distribution ---
+  rule         57271
+  llm          3223
+  llm_common   1170

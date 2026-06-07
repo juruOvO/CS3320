@@ -138,16 +138,28 @@ VITE_API_BASE_URL=http://127.0.0.1:8000/api
 
 `data/` 已入库可直接用。**只有当你想从原始 PDF 重新生成数据时才需要跑下面这些**：
 
+LLM 增强版推荐使用总控脚本。它会按顺序增强角色、关系、叙事、主题，并覆盖 `characters.json`、`relations.json`、`narratives.json`、`themes.json`：
+
+```bash
+python scripts/run_llm_enhance_all.py --dry-run
+python scripts/run_llm_enhance_all.py
+```
+
+详细参数见 `docs/LLM数据增强说明.md`。
+
 1. 准备原始 PDF：在项目根目录放 `京剧剧本/` 文件夹（38 个集合的 PDF + `数据说明.xlsx`）
 2. 按顺序运行：
 
 ```bash
 python scripts/build_play_json.py        # PDF → 京剧剧本_json/ (90MB)
 python scripts/build_features.py         # 派生 plays.json + characters.json
-python scripts/infer_roles.py            # 监督学习推断未标注角色行当
+python scripts/infer_roles.py            # LLM 推断未标注/低置信度角色语义字段
 python scripts/build_relations.py        # 角色关系网络
+python scripts/augment_relations_llm.py  # 可选：LLM 细化高权重“共现”关系
 python scripts/build_narratives.py       # 叙事张力 + 模式聚类
+python scripts/augment_narratives_llm.py # 可选：LLM 增强叙事模式与转折点
 python scripts/build_themes.py           # LDA 主题模型
+python scripts/augment_themes_llm.py     # 可选：LLM 重建语义主题
 ```
 
 跑完后 `data/` 会被全部更新，重启后端即生效。
