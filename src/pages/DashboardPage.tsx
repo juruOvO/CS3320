@@ -173,7 +173,7 @@ async function loadDashboardData(filters: GlobalFilters): Promise<DashboardData>
 }
 
 export default function DashboardPage() {
-  const { filters } = useFiltersStore()
+  const { filters, setFilters } = useFiltersStore()
   const [activeTask, setActiveTask] = useState<TaskKey>('roles')
   const [interaction, setInteraction] = useState<InteractionState | null>(null)
   const dashboardState = useAsyncData(() => loadDashboardData(filters), [filters])
@@ -195,6 +195,26 @@ export default function DashboardPage() {
   useEffect(() => {
     setInteraction(null)
   }, [activeTask, filters])
+
+  const handleChartClick = (chartId: ChartId, point: ClickPoint, fallbackLabel: string) => {
+    const filterUpdates = getFilterUpdatesFromPoint(chartId, point, dashboard)
+    if (Object.keys(filterUpdates).length > 0) {
+      setInteraction(null)
+      const hasFilterChange = Object.entries(filterUpdates).some(
+        ([key, value]) => filters[key as keyof GlobalFilters] !== (value || undefined),
+      )
+      if (hasFilterChange) {
+        setFilters(filterUpdates)
+      }
+      return
+    }
+
+    setInteraction({
+      chartId,
+      label: point.source && point.target ? `${point.source} -> ${point.target}` : point.label ?? fallbackLabel,
+      tokens: point.tokens,
+    })
+  }
 
   const overviewPayload = useMemo(
     () => (dashboard ? getOverviewPayload(buildOverviewChart(dashboard.overview), interaction) : null),
@@ -268,7 +288,7 @@ export default function DashboardPage() {
               click: (params) => {
                 const point = getClickPoint(params)
                 if (!point || point.tokens.length === 0) return
-                setInteraction({ chartId: 'overview', label: point.label ?? '样本分布', tokens: point.tokens })
+                handleChartClick('overview', point, '样本分布')
               },
             }}
           />
@@ -284,11 +304,7 @@ export default function DashboardPage() {
               click: (params) => {
                 const point = getClickPoint(params)
                 if (!point || point.tokens.length === 0) return
-                setInteraction({
-                  chartId: 'roles',
-                  label: point.label ?? '角色与行当',
-                  tokens: point.tokens,
-                })
+                handleChartClick('roles', point, '角色与行当')
               },
             }}
           />
@@ -306,11 +322,7 @@ export default function DashboardPage() {
               click: (params) => {
                 const point = getClickPoint(params)
                 if (!point || point.tokens.length === 0) return
-                setInteraction({
-                  chartId: 'relations',
-                  label: point.source && point.target ? `${point.source} → ${point.target}` : point.label ?? '关系网络',
-                  tokens: point.tokens,
-                })
+                handleChartClick('relations', point, '关系网络')
               },
             }}
           />
@@ -326,7 +338,7 @@ export default function DashboardPage() {
               click: (params) => {
                 const point = getClickPoint(params)
                 if (!point || point.tokens.length === 0) return
-                setInteraction({ chartId: 'themes', label: point.label ?? '主题分布', tokens: point.tokens })
+                handleChartClick('themes', point, '主题分布')
               },
             }}
           />
@@ -348,7 +360,7 @@ export default function DashboardPage() {
               click: (params) => {
                 const point = getClickPoint(params)
                 if (!point || point.tokens.length === 0) return
-                setInteraction({ chartId: 'narratives', label: point.label ?? '叙事趋势', tokens: point.tokens })
+                handleChartClick('narratives', point, '叙事趋势')
               },
             }}
           />
@@ -364,7 +376,7 @@ export default function DashboardPage() {
               click: (params) => {
                 const point = getClickPoint(params)
                 if (!point || point.tokens.length === 0) return
-                setInteraction({ chartId: 'associations', label: point.label ?? '综合结构', tokens: point.tokens })
+                handleChartClick('associations', point, '综合结构')
               },
             }}
           />
@@ -507,8 +519,12 @@ function buildRelationsChart(data: RelationNetworkResponse) {
         tokens: uniqueTokens([
           `relation:${link.relationType}`,
           ...link.scenes.map((scene) => `scene:${scene}`),
-          ...(sourceNode ? [`play:${sourceNode.playId}`, `role:${sourceNode.roleType}`] : []),
-          ...(targetNode ? [`play:${targetNode.playId}`, `role:${targetNode.roleType}`] : []),
+          ...(sourceNode
+            ? [`play:${sourceNode.playId}`, `role:${sourceNode.roleType}`, `character:${sourceNode.id}`, `name:${sourceNode.name}`]
+            : []),
+          ...(targetNode
+            ? [`play:${targetNode.playId}`, `role:${targetNode.roleType}`, `character:${targetNode.id}`, `name:${targetNode.name}`]
+            : []),
         ]),
       }
     }),
@@ -697,7 +713,7 @@ function createSankeyOption(payload: { nodes: SankeyNode[]; links: SankeyLink[] 
 }
 
 function createGraphOption(payload: { nodes: GraphNode[]; links: GraphLink[] }) {
-  const readablePayload = limitGraphForDisplay(payload, 42)
+  const readablePayload = sortGraphForStableLayout(limitGraphForDisplay(payload, 32))
   const categories = unique(readablePayload.nodes.map((node) => node.category))
   const categoryIndex = new Map(categories.map((category, index) => [category, index]))
 
@@ -713,12 +729,13 @@ function createGraphOption(payload: { nodes: GraphNode[]; links: GraphLink[] }) 
         bottom: 42,
         left: 48,
         roam: true,
-        draggable: true,
+        draggable: false,
         force: {
           initLayout: 'circular',
-          repulsion: 130,
-          edgeLength: [68, 118],
-          gravity: 0.32,
+          repulsion: 120,
+          edgeLength: [58, 105],
+          gravity: 0.24,
+          friction: 0.62,
           layoutAnimation: false,
         },
         categories: categories.map((category) => ({ name: category })),
@@ -730,12 +747,13 @@ function createGraphOption(payload: { nodes: GraphNode[]; links: GraphLink[] }) 
           overflow: 'truncate',
         },
         labelLayout: { hideOverlap: true },
-        lineStyle: { opacity: 0.72, color: '#b38d68' },
+        lineStyle: { opacity: 0.72, color: '#b38d68', curveness: 0.08 },
+        animation: false,
         data: readablePayload.nodes.map((node) => ({
           id: node.id,
           name: node.name,
           category: categoryIndex.get(node.category) ?? 0,
-          symbolSize: Math.max(16, Math.min(node.value * 1.25, 42)),
+          symbolSize: Math.max(14, Math.min(node.value, 32)),
           tokens: node.tokens,
         })),
         links: readablePayload.links.map((link) => ({
@@ -1104,6 +1122,32 @@ function limitGraphForDisplay(graph: { nodes: GraphNode[]; links: GraphLink[] },
   return { nodes: visibleNodes, links: visibleLinks }
 }
 
+function sortGraphForStableLayout(graph: { nodes: GraphNode[]; links: GraphLink[] }) {
+  const linkWeight = new Map<string, number>()
+  graph.links.forEach((link) => {
+    linkWeight.set(link.source, (linkWeight.get(link.source) ?? 0) + link.value)
+    linkWeight.set(link.target, (linkWeight.get(link.target) ?? 0) + link.value)
+  })
+
+  const nodes = [...graph.nodes].sort((a, b) => {
+    const scoreDiff = (linkWeight.get(b.id) ?? 0) - (linkWeight.get(a.id) ?? 0)
+    if (scoreDiff !== 0) return scoreDiff
+    const categoryDiff = a.category.localeCompare(b.category, 'zh-Hans-CN')
+    if (categoryDiff !== 0) return categoryDiff
+    return a.name.localeCompare(b.name, 'zh-Hans-CN')
+  })
+  const nodeOrder = new Map(nodes.map((node, index) => [node.id, index]))
+  const links = [...graph.links].sort((a, b) => {
+    const sourceDiff = (nodeOrder.get(a.source) ?? 0) - (nodeOrder.get(b.source) ?? 0)
+    if (sourceDiff !== 0) return sourceDiff
+    const targetDiff = (nodeOrder.get(a.target) ?? 0) - (nodeOrder.get(b.target) ?? 0)
+    if (targetDiff !== 0) return targetDiff
+    return b.value - a.value
+  })
+
+  return { nodes, links }
+}
+
 function getClickPoint(params: unknown): ClickPoint | null {
   const payload = params as {
     value?: number | number[]
@@ -1231,6 +1275,58 @@ function getTokenValue(tokens: string[], key: string) {
   const prefix = `${key}:`
   const token = tokens.find((item) => item.startsWith(prefix))
   return token ? token.slice(prefix.length) : ''
+}
+
+function getTokenValues(tokens: string[], key: string) {
+  const prefix = `${key}:`
+  return unique(tokens.filter((item) => item.startsWith(prefix)).map((item) => item.slice(prefix.length)))
+}
+
+function getSingleTokenValue(tokens: string[], key: string) {
+  const values = getTokenValues(tokens, key)
+  return values.length === 1 ? values[0] : ''
+}
+
+function getFilterUpdatesFromPoint(
+  chartId: ChartId,
+  point: ClickPoint,
+  dashboard: DashboardData | null,
+): Partial<GlobalFilters> {
+  if (chartId === 'overview') {
+    return {
+      period: getSingleTokenValue(point.tokens, 'period') || undefined,
+      genre: getSingleTokenValue(point.tokens, 'genre') || undefined,
+    }
+  }
+
+  if (chartId === 'themes') {
+    return {
+      genre: getSingleTokenValue(point.tokens, 'genre') || undefined,
+      theme: getSingleTokenValue(point.tokens, 'theme') || undefined,
+    }
+  }
+
+  if (chartId === 'associations' || chartId === 'narratives') {
+    const playId = getSingleTokenValue(point.tokens, 'play')
+    return playId ? { playId } : {}
+  }
+
+  if (chartId === 'relations' && !point.source && !point.target) {
+    const playId = getSingleTokenValue(point.tokens, 'play')
+    const characterId = getSingleTokenValue(point.tokens, 'character')
+    return {
+      ...(playId ? { playId } : {}),
+      ...(characterId ? { characterId } : {}),
+    }
+  }
+
+  if (chartId === 'roles' && dashboard) {
+    const mainRoles = new Set(dashboard.roles.characters.map((character) => character.roleMain))
+    const roleType = getTokenValues(point.tokens, 'role').find((role) => mainRoles.has(role))
+    return roleType ? { roleType } : {}
+  }
+
+  return {}
 }
 
 function hasNarrativePlay(data: NarrativeResponse, playId: string) {

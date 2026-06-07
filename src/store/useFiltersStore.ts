@@ -4,6 +4,7 @@ import type { GlobalFilters } from '@/api/types'
 interface FiltersState {
   filters: GlobalFilters
   setFilter: <K extends keyof GlobalFilters>(key: K, value: GlobalFilters[K]) => void
+  setFilters: (updates: Partial<GlobalFilters>) => void
   resetFilters: () => void
 }
 
@@ -27,5 +28,17 @@ export const useFiltersStore = create<FiltersState>((set) => ({
         ...(key === 'playId' ? { characterId: undefined } : {}),
       },
     })),
+  setFilters: (updates) =>
+    set((state) => {
+      const nextFilters = Object.fromEntries(
+        Object.entries({ ...state.filters, ...updates }).map(([key, value]) => [key, value || undefined]),
+      ) as GlobalFilters
+
+      if ('playId' in updates && !('characterId' in updates)) {
+        nextFilters.characterId = undefined
+      }
+
+      return { filters: nextFilters }
+    }),
   resetFilters: () => set({ filters: initialFilters }),
 }))
