@@ -30,8 +30,8 @@ async function getRemote<T>(path: string, params?: Record<string, string | undef
 }
 
 export const apiClient = {
-  getFilterOptions: (): Promise<FilterOptionsResponse> =>
-    useMock ? getMockService().then((mock) => mock.getFilterOptions()) : getRemote('/filter-options'),
+  getFilterOptions: (filters: GlobalFilters = {}): Promise<FilterOptionsResponse> =>
+    useMock ? getMockService().then((mock) => mock.getFilterOptions(filters)) : getRemote('/filter-options', filters),
 
   getOverview: (filters: GlobalFilters): Promise<OverviewResponse> =>
     useMock ? getMockService().then((mock) => mock.getOverview(filters)) : getRemote('/overview', filters),

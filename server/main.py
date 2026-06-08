@@ -249,20 +249,56 @@ def build_theme_sunburst(profiles: list[dict]) -> dict[str, Any]:
     }
 
 
+def performance_cue_for_character(character: dict) -> str:
+    evidence_text = " ".join(character.get("evidence", []))
+    has_singing_cue = any(token in evidence_text for token in ["西皮", "二黄", "慢板", "原板", "流水", "摇板", "散板", "唱", "板"])
+    has_speech_cue = "·白】" in evidence_text or "念" in evidence_text or "白" in evidence_text
+
+    if character.get("actionScore", 0) >= 0.35:
+        return "做打线索强"
+    if has_singing_cue or has_speech_cue:
+        return "唱念线索强"
+    if character.get("emotionScore", 0) >= 0.22:
+        return "情感推动强"
+    if character.get("appearanceCount", 0) >= 8:
+        return "出场高频"
+    return "辅助角色"
+
+
 # ===========================================================
 # /api/filter-options
 # ===========================================================
 @app.get("/api/filter-options")
-def get_filter_options():
-    periods = sorted({p["period"] for p in PLAYS if p.get("period")})
-    genres = sorted({p["genre"] for p in PLAYS if p.get("genre")})
+def get_filter_options(
+    period: Optional[str] = None,
+    genre: Optional[str] = None,
+    playId: Optional[str] = None,
+    roleType: Optional[str] = None,
+    characterId: Optional[str] = None,
+    theme: Optional[str] = None,
+    narrativePattern: Optional[str] = None,
+):
+    filters = common_filters(period, genre, playId, roleType, characterId, theme, narrativePattern)
+    period_ids = filter_play_ids({**filters, "period": None})
+    genre_ids = filter_play_ids({**filters, "genre": None})
+    play_ids = filter_play_ids({**filters, "playId": None})
+    role_ids = filter_play_ids({**filters, "roleType": None, "characterId": None})
+    theme_ids = filter_play_ids({**filters, "theme": None})
+    pattern_ids = filter_play_ids({**filters, "narrativePattern": None})
+
+    periods = sorted({PLAY_BY_ID[pid]["period"] for pid in period_ids if pid in PLAY_BY_ID and PLAY_BY_ID[pid].get("period")})
+    genres = sorted({PLAY_BY_ID[pid]["genre"] for pid in genre_ids if pid in PLAY_BY_ID and PLAY_BY_ID[pid].get("genre")})
     plays = sorted(
-        [{"id": p["id"], "title": p["title"]} for p in PLAYS],
+        [{"id": PLAY_BY_ID[pid]["id"], "title": PLAY_BY_ID[pid]["title"]} for pid in play_ids if pid in PLAY_BY_ID],
         key=lambda x: x["id"],
     )
-    role_types = sorted({c["roleMain"] for c in CHARS if c.get("roleMain")})
-    themes = sorted({t["theme"] for t in THEMES_RECORDS if t.get("theme")})
-    patterns = sorted({p["narrativePattern"] for p in PLAYS if p.get("narrativePattern")})
+    role_types = sorted({c["roleMain"] for c in CHARS if c.get("roleMain") and c["playId"] in role_ids})
+    themes = sorted({t["theme"] for t in THEMES_RECORDS if t.get("theme") and t["playId"] in theme_ids})
+    patterns = sorted({
+        PLAY_BY_ID[pid]["narrativePattern"]
+        for pid in pattern_ids
+        if pid in PLAY_BY_ID and PLAY_BY_ID[pid].get("narrativePattern")
+    })
     return {
         "periods": periods,
         "genres": genres,
@@ -377,33 +413,32 @@ def get_character_roles(
     play_ids = filter_play_ids(filters)
     chars = filter_chars(filters, play_ids)
 
-    # Sankey: gender → ageGroup → roleMain
-    sankey_pairs1 = Counter()  # (gender, ageGroup)
-    sankey_pairs2 = Counter()  # (ageGroup, roleMain)
-    role_main_set = set()
+    # Sankey: period → performance cue → roleMain
+    sankey_pairs1 = Counter()  # (period, performance cue)
+    sankey_pairs2 = Counter()  # (performance cue, roleMain)
     for c in chars:
-        g = c.get("gender", "未知")
-        a = c.get("ageGroup", "未知")
-        r = c.get("roleMain", "未知")
-        sankey_pairs1[(g, a)] += 1
-        sankey_pairs2[(a, r)] += 1
-        role_main_set.add(r)
+        play = PLAY_BY_ID.get(c["playId"], {})
+        period_v = play.get("period", "未知时期")
+        cue = performance_cue_for_character(c)
+        role = c.get("roleMain") or c.get("roleSubtype") or "未识别行当"
+        sankey_pairs1[(period_v, cue)] += 1
+        sankey_pairs2[(cue, role)] += 1
 
     # Build sankey node list with category for each layer
     nodes_seen: dict[str, str] = {}  # name -> category
-    for (g, a), _ in sankey_pairs1.items():
-        nodes_seen.setdefault(g, "性别")
-        nodes_seen.setdefault(a, "年龄")
-    for (a, r), _ in sankey_pairs2.items():
-        nodes_seen.setdefault(a, "年龄")
-        nodes_seen.setdefault(r, "行当")
+    for (period_v, cue), _ in sankey_pairs1.items():
+        nodes_seen.setdefault(period_v, "时期")
+        nodes_seen.setdefault(cue, "表演线索")
+    for (cue, role), _ in sankey_pairs2.items():
+        nodes_seen.setdefault(cue, "表演线索")
+        nodes_seen.setdefault(role, "行当")
     sankey_nodes = [{"name": n, "category": c} for n, c in nodes_seen.items()]
     sankey_links = [
-        {"source": g, "target": a, "value": v}
-        for (g, a), v in sankey_pairs1.items()
+        {"source": period_v, "target": cue, "value": v}
+        for (period_v, cue), v in sankey_pairs1.items()
     ] + [
-        {"source": a, "target": r, "value": v}
-        for (a, r), v in sankey_pairs2.items()
+        {"source": cue, "target": role, "value": v}
+        for (cue, role), v in sankey_pairs2.items()
     ]
 
     # Heatmap: period × roleType × feature (avg actionScore / emotionScore / appearanceCount)

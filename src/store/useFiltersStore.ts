@@ -25,6 +25,9 @@ export const useFiltersStore = create<FiltersState>((set) => ({
       filters: {
         ...state.filters,
         [key]: value || undefined,
+        ...(['period', 'genre', 'roleType', 'theme', 'narrativePattern'].includes(String(key))
+          ? { playId: undefined, characterId: undefined }
+          : {}),
         ...(key === 'playId' ? { characterId: undefined } : {}),
       },
     })),
