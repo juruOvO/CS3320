@@ -76,19 +76,38 @@ function countBy<T>(items: T[], getKey: (item: T) => string) {
   return map
 }
 
+function getPerformanceCue(character: CharacterRecord) {
+  const evidenceText = character.evidence.join(' ')
+  const hasSingingCue = /西皮|二黄|慢板|原板|流水|摇板|散板|唱|板/.test(evidenceText)
+  const hasSpeechCue = /【[^】]*·白】|念|白/.test(evidenceText)
+
+  if (character.actionScore >= 0.35) return '做打线索强'
+  if (hasSingingCue || hasSpeechCue) return '唱念线索强'
+  if (character.emotionScore >= 0.22) return '情感推动强'
+  if (character.appearanceCount >= 8) return '出场高频'
+  return '辅助角色'
+}
+
 function unique<T>(items: T[]) {
   return Array.from(new Set(items))
 }
 
-export async function getFilterOptions(): Promise<FilterOptionsResponse> {
+export async function getFilterOptions(filters: GlobalFilters = {}): Promise<FilterOptionsResponse> {
   await wait()
+  const periodPlays = getVisiblePlays({ ...filters, period: undefined })
+  const genrePlays = getVisiblePlays({ ...filters, genre: undefined })
+  const playOptions = getVisiblePlays({ ...filters, playId: undefined })
+  const rolePlayIds = new Set(getVisiblePlays({ ...filters, roleType: undefined, characterId: undefined }).map((play) => play.id))
+  const themePlayIds = new Set(getVisiblePlays({ ...filters, theme: undefined }).map((play) => play.id))
+  const patternPlays = getVisiblePlays({ ...filters, narrativePattern: undefined })
+
   return {
-    periods: unique(plays.map((play) => play.period)),
-    genres: unique(plays.map((play) => play.genre)),
-    plays: plays.map((play) => ({ id: play.id, title: play.title })),
-    roleTypes: unique(characters.map((character) => character.roleMain)),
-    themes: unique(themes.map((theme) => theme.theme)),
-    narrativePatterns: unique(plays.map((play) => play.narrativePattern)),
+    periods: unique(periodPlays.map((play) => play.period)),
+    genres: unique(genrePlays.map((play) => play.genre)),
+    plays: playOptions.map((play) => ({ id: play.id, title: play.title })),
+    roleTypes: unique(characters.filter((character) => rolePlayIds.has(character.playId)).map((character) => character.roleMain)),
+    themes: unique(themes.filter((theme) => themePlayIds.has(theme.playId)).map((theme) => theme.theme)),
+    narrativePatterns: unique(patternPlays.map((play) => play.narrativePattern)),
   }
 }
 
@@ -172,19 +191,26 @@ export async function getCharacterRoles(filters: GlobalFilters): Promise<Charact
   const links = new Map<string, { source: string; target: string; value: number }>()
 
   visibleCharacters.forEach((character) => {
-    const featureTags = [
-      `性别:${character.gender}`,
-      `年龄:${character.ageGroup}`,
-      `身份:${character.identity}`,
-      ...character.personalityTags.slice(0, 2).map((tag) => `性格:${tag}`),
-    ]
+    const play = playMap.get(character.playId)
+    const period = play?.period ?? '未知时期'
+    const cue = getPerformanceCue(character)
+    const role = character.roleMain || character.roleSubtype || '未识别行当'
 
-    featureTags.forEach((feature) => {
-      nodes.set(feature, { name: feature, category: '特征' })
-      nodes.set(character.roleSubtype, { name: character.roleSubtype, category: '行当' })
-      const key = `${feature}-${character.roleSubtype}`
-      const prev = links.get(key)?.value ?? 0
-      links.set(key, { source: feature, target: character.roleSubtype, value: prev + 1 })
+    nodes.set(period, { name: period, category: '时期' })
+    nodes.set(cue, { name: cue, category: '表演线索' })
+    nodes.set(role, { name: role, category: '行当' })
+
+    const periodCueKey = `${period}-${cue}`
+    const cueRoleKey = `${cue}-${role}`
+    links.set(periodCueKey, {
+      source: period,
+      target: cue,
+      value: (links.get(periodCueKey)?.value ?? 0) + 1,
+    })
+    links.set(cueRoleKey, {
+      source: cue,
+      target: role,
+      value: (links.get(cueRoleKey)?.value ?? 0) + 1,
     })
   })
 

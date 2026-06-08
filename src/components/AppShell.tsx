@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { apiClient } from '@/api/client'
+import type { GlobalFilters } from '@/api/types'
 import { useAsyncData } from '@/hooks/useAsyncData'
 import { useFiltersStore } from '@/store/useFiltersStore'
 
@@ -34,8 +36,26 @@ function SelectField({
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { filters, resetFilters, setFilter } = useFiltersStore()
-  const { data } = useAsyncData(() => apiClient.getFilterOptions(), [])
+  const { filters, resetFilters, setFilter, setFilters } = useFiltersStore()
+  const { data } = useAsyncData(() => apiClient.getFilterOptions(filters), [filters])
+
+  useEffect(() => {
+    if (!data) return
+
+    const invalidFilters: Partial<GlobalFilters> = {}
+    if (filters.period && !data.periods.includes(filters.period)) invalidFilters.period = undefined
+    if (filters.genre && !data.genres.includes(filters.genre)) invalidFilters.genre = undefined
+    if (filters.playId && !data.plays.some((play) => play.id === filters.playId)) invalidFilters.playId = undefined
+    if (filters.roleType && !data.roleTypes.includes(filters.roleType)) invalidFilters.roleType = undefined
+    if (filters.theme && !data.themes.includes(filters.theme)) invalidFilters.theme = undefined
+    if (filters.narrativePattern && !data.narrativePatterns.includes(filters.narrativePattern)) {
+      invalidFilters.narrativePattern = undefined
+    }
+
+    if (Object.keys(invalidFilters).length > 0) {
+      setFilters(invalidFilters)
+    }
+  }, [data, filters, setFilters])
 
   const activeFilters = [
     filters.period,

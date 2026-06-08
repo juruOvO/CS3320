@@ -83,6 +83,7 @@ type HeatmapCell = {
   x: string
   y: string
   value: number
+  combinations?: string[]
   tokens: string[]
 }
 
@@ -90,6 +91,7 @@ type LineSeries = {
   name: string
   group?: string
   isFocus?: boolean
+  isReference?: boolean
   data: Array<{ x: string; value: number | null; tokens: string[] }>
 }
 
@@ -157,6 +159,52 @@ const chartTitles: Record<ChartId, string> = {
   themes: '主题分布图',
   narratives: '叙事趋势图',
   associations: '跨任务综合图',
+}
+
+const narrativePatternOrder = [
+  '急起直下型',
+  '尾重收束型',
+  '中段高潮型',
+  '多峰起伏型',
+  '渐进升级型',
+  '折子片段型',
+  '反转突变型',
+  '平稳铺陈型',
+]
+
+const narrativePatternGuides: Record<string, { values: number[]; description: string }> = {
+  急起直下型: {
+    values: [0.92, 0.76, 0.58, 0.42, 0.32, 0.26, 0.22, 0.19, 0.16, 0.14, 0.12],
+    description: '开端张力很高，随后快速回落。',
+  },
+  尾重收束型: {
+    values: [0.16, 0.2, 0.24, 0.3, 0.36, 0.44, 0.54, 0.66, 0.78, 0.88, 0.94],
+    description: '前段铺陈较多，后段集中升高并收束。',
+  },
+  中段高潮型: {
+    values: [0.2, 0.3, 0.46, 0.68, 0.9, 0.76, 0.56, 0.4, 0.32, 0.26, 0.22],
+    description: '高潮集中在中段，之后逐步回落。',
+  },
+  多峰起伏型: {
+    values: [0.26, 0.64, 0.34, 0.78, 0.42, 0.88, 0.48, 0.72, 0.38, 0.56, 0.32],
+    description: '多次上升和回落，形成多个高潮点。',
+  },
+  渐进升级型: {
+    values: [0.14, 0.2, 0.28, 0.36, 0.45, 0.55, 0.65, 0.75, 0.84, 0.91, 0.96],
+    description: '张力随进度持续抬升，后段达到高位。',
+  },
+  折子片段型: {
+    values: [0.42, 0.52, 0.58, 0.5, 0.56, 0.48, 0.55, 0.5, 0.57, 0.51, 0.54],
+    description: '更像独立折子戏片段，局部完整但整体升降幅度较小。',
+  },
+  反转突变型: {
+    values: [0.24, 0.28, 0.32, 0.36, 0.82, 0.76, 0.42, 0.38, 0.58, 0.5, 0.46],
+    description: '中途出现明显突变或反转，张力结构突然改向。',
+  },
+  平稳铺陈型: {
+    values: [0.34, 0.38, 0.36, 0.4, 0.39, 0.42, 0.38, 0.41, 0.37, 0.4, 0.38],
+    description: '整体波动较小，以平稳铺陈为主。',
+  },
 }
 
 async function loadDashboardData(filters: GlobalFilters): Promise<DashboardData> {
@@ -297,7 +345,7 @@ export default function DashboardPage() {
         <ChartSlot chartId="roles" activeTask={activeTask}>
           <ChartPanel
             title={chartTitles.roles}
-            subtitle="查看角色特征如何流向主类行当和细分行当。"
+            subtitle="按时期汇总角色的唱念、做打、出场等表演线索，观察它们如何流向主类行当。"
             option={createSankeyOption(rolesPayload)}
             height={420}
             onEvents={{
@@ -331,7 +379,7 @@ export default function DashboardPage() {
         <ChartSlot chartId="themes" activeTask={activeTask}>
           <ChartPanel
             title={chartTitles.themes}
-            subtitle="按剧类和主题交叉观察主题分布，支持与其他图共享筛选。"
+            subtitle="横轴为剧类，纵轴为主题，颜色越深表示该主题在该剧类中越高频。"
             option={createHeatmapOption(themesPayload)}
             height={420}
             onEvents={{
@@ -352,7 +400,7 @@ export default function DashboardPage() {
             subtitle={
               filters.playId
                 ? '高亮所选剧目，叠加同叙事模式的剧目作背景对照。'
-                : '按剧情进度（0→100%）对照各剧目叙事张力的起伏。'
+                : '全量视图展示 8 类叙事模式轮廓线，不代表固定剧目；筛选剧目后显示真实曲线。'
             }
             option={createLineOption(narrativesPayload)}
             height={420}
@@ -369,7 +417,7 @@ export default function DashboardPage() {
         <ChartSlot chartId="associations" activeTask={activeTask}>
           <ChartPanel
             title={chartTitles.associations}
-            subtitle="在综合结构空间里观察剧目之间的相似性，并回联其他图查看原因。"
+            subtitle="横轴为关系复杂度，纵轴为主题-叙事一致性；颜色仅区分类别，不表示特殊点。"
             option={createScatterOption(associationsPayload)}
             height={380}
             onEvents={{
@@ -485,7 +533,7 @@ function buildRolesChart(data: CharacterRoleResponse) {
   })
 
   const nodes = unique(links.flatMap((link) => [link.source, link.target])).map((nodeId) => {
-    const category = nodeId.startsWith('source:') ? '性别' : nodeId.startsWith('middle:') ? '年龄' : '行当'
+    const category = nodeId.startsWith('source:') ? '时期' : nodeId.startsWith('middle:') ? '表演线索' : '行当'
     return {
       name: nodeId,
       label: getNodeLabel(nodeId),
@@ -533,11 +581,22 @@ function buildRelationsChart(data: RelationNetworkResponse) {
 
 function buildThemesChart(data: ThemeResponse) {
   const profileTokensByTheme = new Map<string, string[]>()
+  const combinationsByTheme = new Map<string, string[]>()
 
   data.playProfiles.forEach((profile) => {
     profile.topThemes.forEach((theme) => {
       const existing = profileTokensByTheme.get(theme) ?? []
       profileTokensByTheme.set(theme, uniqueTokens([...existing, `play:${profile.playId}`]))
+    })
+  })
+  const rankedCombinations = [...data.combinations].sort((a, b) => b.value - a.value)
+  rankedCombinations.forEach((item) => {
+    const label = `${item.combination.join(' + ')}（${item.value}）`
+    item.combination.forEach((theme) => {
+      const existing = combinationsByTheme.get(theme) ?? []
+      if (existing.length < 3 && !existing.includes(label)) {
+        combinationsByTheme.set(theme, [...existing, label])
+      }
     })
   })
 
@@ -548,6 +607,7 @@ function buildThemesChart(data: ThemeResponse) {
       x: item.genre,
       y: item.theme,
       value: item.value,
+      combinations: combinationsByTheme.get(item.theme) ?? [],
       tokens: uniqueTokens([`genre:${item.genre}`, `theme:${item.theme}`, ...(profileTokensByTheme.get(item.theme) ?? [])]),
     })),
   }
@@ -776,16 +836,37 @@ function createHeatmapOption(payload: {
   const maxValue = Math.max(...payload.cells.map((cell) => cell.value), 1)
 
   return {
-    tooltip: tooltipStyle,
-    grid: { ...commonGrid, top: 42, left: 96, bottom: 86 },
+    tooltip: {
+      ...tooltipStyle,
+      formatter: (params: { data?: { value?: [number, number, number]; combinations?: string[] } }) => {
+        const value = params.data?.value
+        if (!value) return ''
+        const [xIndex, yIndex, count] = value
+        const genre = payload.xLabels[xIndex] ?? '未知剧类'
+        const theme = payload.yLabels[yIndex] ?? '未知主题'
+        const combinations = params.data?.combinations ?? []
+        return [
+          `<div style="font-weight:600;margin-bottom:6px;">${genre} × ${theme}</div>`,
+          `<div>组合强度：${count}</div>`,
+          combinations.length > 0 ? `<div>常见组合：${combinations.join('；')}</div>` : '',
+          '<div style="margin-top:4px;color:#9a8772;">颜色越深，表示该主题在该剧类中越高频。</div>',
+        ].join('')
+      },
+    },
+    grid: { ...commonGrid, top: 52, left: 108, bottom: 92 },
     xAxis: {
       type: 'category',
+      name: '剧类',
+      nameLocation: 'middle',
+      nameGap: 42,
       data: payload.xLabels,
       ...axisStyle,
       axisLabel: { ...axisStyle.axisLabel, interval: 0, hideOverlap: true },
     },
     yAxis: {
       type: 'category',
+      name: '主题',
+      nameGap: 68,
       data: payload.yLabels,
       ...axisStyle,
       axisLabel: { ...axisStyle.axisLabel, width: 76, overflow: 'truncate' },
@@ -799,6 +880,8 @@ function createHeatmapOption(payload: {
       itemWidth: 12,
       itemHeight: 180,
       inRange: { color: ['#f8efe1', '#d5ac76', '#8C1D18'] },
+      text: ['高频', '低频'],
+      textStyle: { color: '#6b6259', fontSize: 11 },
     },
     series: [
       {
@@ -807,6 +890,7 @@ function createHeatmapOption(payload: {
           value: [payload.xLabels.indexOf(cell.x), payload.yLabels.indexOf(cell.y), cell.value],
           tokens: cell.tokens,
           label: `${cell.y} × ${cell.x}`,
+          combinations: cell.combinations ?? [],
         })),
       },
     ],
@@ -814,17 +898,37 @@ function createHeatmapOption(payload: {
 }
 
 function createLineOption(payload: LineChartPayload) {
+  const showPatternGuides = payload.series.length > 12 && !payload.series.some((series) => series.isFocus)
   const normalizedPayload =
-    payload.series.length > 12
-      ? aggregateNormalizedLineSeriesByGroup(payload.series)
-      : { xLabels: payload.xLabels, series: pickRepresentativeLineSeries(payload.series, 6) }
+    showPatternGuides
+      ? buildNarrativePatternGuidePayload(payload)
+      : payload.series.length > 12
+        ? aggregateNormalizedLineSeriesByGroup(payload.series)
+        : { xLabels: payload.xLabels, series: pickRepresentativeLineSeries(payload.series, 6) }
   const displayedSeries = normalizedPayload.series
   const valueRange = payload.valueRange ?? getLineValueRange(displayedSeries)
   const hasFocus = displayedSeries.some((series) => series.isFocus)
   const showLegend = displayedSeries.length <= 8
   return {
     color: chartPalette,
-    tooltip: { ...tooltipStyle, trigger: 'axis' },
+    tooltip: {
+      ...tooltipStyle,
+      trigger: 'axis',
+      formatter: (params: Array<{ axisValue?: string; data?: { value?: number; description?: string }; seriesName?: string }>) => {
+        if (!Array.isArray(params) || params.length === 0) return ''
+        const axisLabel = params[0]?.axisValue ?? ''
+        const rows = params
+          .filter((item) => typeof item.data?.value === 'number')
+          .map((item) => {
+            const description = item.data?.description
+            return [
+              `<div><strong>${item.seriesName ?? ''}</strong>：${Number(item.data?.value).toFixed(2)}</div>`,
+              description ? `<div style="color:#9a8772;">${description}</div>` : '',
+            ].join('')
+          })
+        return [`<div style="font-weight:600;margin-bottom:6px;">剧情进度：${axisLabel}</div>`, ...rows].join('')
+      },
+    },
     legend: showLegend
       ? {
           bottom: 0,
@@ -837,12 +941,17 @@ function createLineOption(payload: LineChartPayload) {
     grid: { ...commonGrid, top: 42, bottom: showLegend ? 92 : 56 },
     xAxis: {
       type: 'category',
+      name: '剧情进度',
+      nameLocation: 'middle',
+      nameGap: 34,
       data: normalizedPayload.xLabels,
       ...axisStyle,
       axisLabel: { ...axisStyle.axisLabel, margin: 12 },
     },
     yAxis: {
       type: 'value',
+      name: '叙事张力',
+      nameGap: 48,
       scale: true,
       min: valueRange.min,
       max: valueRange.max,
@@ -863,16 +972,18 @@ function createLineOption(payload: LineChartPayload) {
         : undefined,
     series: displayedSeries.map((series, index) => {
       const isFocus = Boolean(series.isFocus)
+      const isReference = Boolean(series.isReference)
       return {
         name: series.name,
         type: 'line',
-        smooth: true,
-        showSymbol: false,
+        smooth: !isReference,
+        showSymbol: isReference,
+        symbolSize: isReference ? 5 : 0,
         connectNulls: true,
-        z: isFocus ? 10 : 2,
+        z: isFocus || isReference ? 10 : 2,
         lineStyle: {
-          width: hasFocus ? (isFocus ? 3.4 : 1.3) : index < 4 ? 2.6 : 1.7,
-          opacity: hasFocus ? (isFocus ? 1 : 0.3) : index < 4 ? 0.92 : 0.58,
+          width: isReference ? 3 : hasFocus ? (isFocus ? 3.4 : 1.3) : index < 4 ? 2.6 : 1.7,
+          opacity: isReference ? 0.88 : hasFocus ? (isFocus ? 1 : 0.3) : index < 4 ? 0.92 : 0.58,
         },
         data: normalizedPayload.xLabels.map((label) => {
           const point = series.data.find((item) => item.x === label)
@@ -880,6 +991,7 @@ function createLineOption(payload: LineChartPayload) {
             value: point?.value ?? null,
             tokens: point?.tokens ?? [],
             label: `${series.name} · ${label}`,
+            description: series.group ? narrativePatternGuides[series.group]?.description : undefined,
           }
         }),
       }
@@ -888,7 +1000,7 @@ function createLineOption(payload: LineChartPayload) {
 }
 
 function createScatterOption(payload: { points: ScatterPoint[] }) {
-  const highlightPoints = pickHighlightedScatterPoints(payload.points, 10)
+  const labelPointIds = new Set(pickHighlightedScatterPoints(payload.points, 10).map((point) => point.id))
   const showAllLabels = payload.points.length <= 36
   const hasFocus = payload.points.some((point) => point.isFocus)
   return {
@@ -915,23 +1027,24 @@ function createScatterOption(payload: { points: ScatterPoint[] }) {
           `<div>叙事模式：${point.category ?? '未知'}</div>`,
           `<div>主导关系：${point.dominantRelation ?? '未知'}</div>`,
           `<div>核心主题：${point.topTheme ?? '未知'}</div>`,
-          `<div>坐标：${formatNumber(x)} / ${formatNumber(y)}</div>`,
+          `<div>关系复杂度：${formatNumber(x)}</div>`,
+          `<div>主题-叙事一致性：${formatNumber(y)}</div>`,
         ].join('')
       },
     },
     grid: { ...commonGrid, top: 54, right: 52, bottom: 58 },
     xAxis: {
       type: 'value',
-      name: '关系复杂度',
+      name: '关系复杂度（关系越多越靠右）',
       nameLocation: 'middle',
       nameGap: 34,
       ...axisStyle,
     },
     yAxis: {
       type: 'value',
-      name: '主题-叙事耦合度',
+      name: '主题-叙事一致性（越高越集中）',
       nameLocation: 'middle',
-      nameGap: 42,
+      nameGap: 58,
       ...axisStyle,
     },
     series: [
@@ -945,6 +1058,7 @@ function createScatterOption(payload: { points: ScatterPoint[] }) {
           topTheme: point.topTheme,
           dominantRelation: point.dominantRelation,
           tokens: point.tokens,
+          showLabel: labelPointIds.has(point.id),
           symbolSize: point.isFocus
             ? 30
             : payload.points.length > 160
@@ -955,11 +1069,14 @@ function createScatterOption(payload: { points: ScatterPoint[] }) {
             : undefined,
           isFocus: point.isFocus,
         })),
-        itemStyle: { opacity: hasFocus ? 0.22 : showAllLabels ? 0.78 : 0.32 },
+        itemStyle: { opacity: hasFocus ? 0.26 : showAllLabels ? 0.78 : 0.48 },
         label: {
-          show: showAllLabels || hasFocus,
-          formatter: (params: { data: { label?: string; isFocus?: boolean } }) =>
-            hasFocus && !params.data.isFocus ? '' : String(params.data.label ?? ''),
+          show: true,
+          formatter: (params: { data: { label?: string; isFocus?: boolean; showLabel?: boolean } }) => {
+            if (hasFocus && !params.data.isFocus) return ''
+            if (!showAllLabels && !params.data.showLabel && !params.data.isFocus) return ''
+            return String(params.data.label ?? '')
+          },
           position: 'top',
           color: '#6b6259',
           fontSize: 11,
@@ -976,32 +1093,6 @@ function createScatterOption(payload: { points: ScatterPoint[] }) {
           },
         },
       },
-      ...(showAllLabels
-        ? []
-        : [
-            {
-              type: 'scatter',
-              data: highlightPoints.map((point) => ({
-                value: [point.x, point.y],
-                label: point.label,
-                genre: point.genre,
-                category: point.category,
-                topTheme: point.topTheme,
-                dominantRelation: point.dominantRelation,
-                tokens: point.tokens,
-                symbolSize: Math.max(point.size, 16),
-              })),
-              itemStyle: { opacity: 0.88 },
-              label: {
-                show: true,
-                formatter: (params: { data: { label?: string } }) => String(params.data.label ?? ''),
-                position: 'top',
-                color: '#6b6259',
-                fontSize: 11,
-              },
-              labelLayout: { hideOverlap: true },
-            },
-          ]),
     ],
   }
 }
@@ -1250,8 +1341,21 @@ function roleNameMatchesCharacter(name: string, character: CharacterRecord) {
     character.identity === name ||
     character.ageGroup === name ||
     character.gender === name ||
-    character.personalityTags.includes(name)
+    character.personalityTags.includes(name) ||
+    getCharacterPerformanceCue(character) === name
   )
+}
+
+function getCharacterPerformanceCue(character: CharacterRecord) {
+  const evidenceText = character.evidence.join(' ')
+  const hasSingingCue = /西皮|二黄|慢板|原板|流水|摇板|散板|唱|板/.test(evidenceText)
+  const hasSpeechCue = /【[^】]*·白】|念|白/.test(evidenceText)
+
+  if (character.actionScore >= 0.35) return '做打线索强'
+  if (hasSingingCue || hasSpeechCue) return '唱念线索强'
+  if (character.emotionScore >= 0.22) return '情感推动强'
+  if (character.appearanceCount >= 8) return '出场高频'
+  return '辅助角色'
 }
 
 function buildCharacterTokens(character: CharacterRecord) {
@@ -1306,7 +1410,13 @@ function getFilterUpdatesFromPoint(
     }
   }
 
-  if (chartId === 'associations' || chartId === 'narratives') {
+  if (chartId === 'narratives') {
+    const playId = getSingleTokenValue(point.tokens, 'play')
+    const narrativePattern = getSingleTokenValue(point.tokens, 'pattern')
+    return playId ? { playId } : narrativePattern ? { narrativePattern } : {}
+  }
+
+  if (chartId === 'associations') {
     const playId = getSingleTokenValue(point.tokens, 'play')
     return playId ? { playId } : {}
   }
@@ -1368,6 +1478,30 @@ function pickRepresentativeLineSeries(series: LineSeries[], maxSeries: number) {
   }
 
   return selected.map(({ item }) => item)
+}
+
+function buildNarrativePatternGuidePayload(payload: LineChartPayload) {
+  const availablePatterns = new Set(payload.series.map((series) => series.group).filter((group): group is string => Boolean(group)))
+  const patterns = narrativePatternOrder.filter((pattern) => availablePatterns.has(pattern))
+  const normalizedAxis = buildNormalizedAxis(11)
+  const xLabels = normalizedAxis.map((item) => item.label)
+
+  return {
+    xLabels,
+    series: patterns.map((pattern) => {
+      const guide = narrativePatternGuides[pattern]
+      return {
+        name: `${pattern}轮廓`,
+        group: pattern,
+        isReference: true,
+        data: xLabels.map((label, index) => ({
+          x: label,
+          value: guide.values[index] ?? guide.values[guide.values.length - 1] ?? null,
+          tokens: uniqueTokens([`pattern:${pattern}`]),
+        })),
+      }
+    }),
+  }
 }
 
 function aggregateNormalizedLineSeriesByGroup(series: LineSeries[]) {
