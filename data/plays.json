@@ -39,7 +39,7 @@
     "numPages": 8,
     "numLines": 243,
     "numMainCharacters": 9,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "01001003",
@@ -121,7 +121,7 @@
     "numPages": 10,
     "numLines": 314,
     "numMainCharacters": 6,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "01001007",
@@ -163,7 +163,7 @@
     "numPages": 7,
     "numLines": 188,
     "numMainCharacters": 5,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "01001009",
@@ -205,7 +205,7 @@
     "numPages": 5,
     "numLines": 191,
     "numMainCharacters": 6,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "01001011",
@@ -352,7 +352,7 @@
     "numPages": 8,
     "numLines": 260,
     "numMainCharacters": 5,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "01001018",
@@ -394,7 +394,7 @@
     "numPages": 4,
     "numLines": 101,
     "numMainCharacters": 3,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "01001020",
@@ -455,7 +455,7 @@
     "numPages": 2,
     "numLines": 28,
     "numMainCharacters": 1,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "01002004",
@@ -497,7 +497,7 @@
     "numPages": 3,
     "numLines": 80,
     "numMainCharacters": 3,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "01002006",
@@ -558,7 +558,7 @@
     "numPages": 8,
     "numLines": 230,
     "numMainCharacters": 4,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "01002009",
@@ -661,7 +661,7 @@
     "numPages": 3,
     "numLines": 62,
     "numMainCharacters": 2,
-    "conflictType": "军事战争冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "01002014",
@@ -682,7 +682,7 @@
     "numPages": 4,
     "numLines": 142,
     "numMainCharacters": 3,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "01002015",
@@ -714,7 +714,7 @@
     "summary": "宋，梁山泊宋江投顺后，阮小五不愿招安，仍以捕鱼为业。所生一女许与花荣之子，以庆顶珠为定物。阮氏\n父女二人，一叶扁舟，烟蓑雨笠，悠然自适。有土豪丁某，向阮小五需索陋规，阮小五不与。丁某遣教师率\n家丁往捕阮小五。阮小五举手一挥，众皆倾跌，负创而回。丁某嘱县官逮阮小五，责以四十六板，阮小五出\n而大愤，率女杀至丁府，歼其全家而逃隐焉。",
     "sceneCount": 6,
     "authorEra": "清末民初",
-    "narrativePattern": "折子片段型",
+    "narrativePattern": "多峰起伏型",
     "collectionCode": "01000000",
     "collectionName": "《戏考》",
     "sourceCollection": "戏考",
@@ -722,7 +722,7 @@
     "numPages": 13,
     "numLines": 520,
     "numMainCharacters": 5,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "01002017",
@@ -783,7 +783,7 @@
     "numPages": 6,
     "numLines": 227,
     "numMainCharacters": 4,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "01002020",
@@ -823,7 +823,7 @@
     "numPages": 8,
     "numLines": 303,
     "numMainCharacters": 6,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "01003002",
@@ -865,7 +865,7 @@
     "numPages": 8,
     "numLines": 216,
     "numMainCharacters": 3,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "01003005",
@@ -886,7 +886,7 @@
     "numPages": 3,
     "numLines": 37,
     "numMainCharacters": 1,
-    "conflictType": "其他"
+    "conflictType": "市井生活冲突"
   },
   {
     "id": "01003006",
@@ -907,7 +907,7 @@
     "numPages": 9,
     "numLines": 246,
     "numMainCharacters": 8,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "01003008",
@@ -968,7 +968,7 @@
     "numPages": 6,
     "numLines": 173,
     "numMainCharacters": 3,
-    "conflictType": "军事战争冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "01003011",
@@ -1027,7 +1027,7 @@
     "numPages": 2,
     "numLines": 47,
     "numMainCharacters": 1,
-    "conflictType": "神怪斗法冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "01003014",
@@ -1069,7 +1069,7 @@
     "numPages": 5,
     "numLines": 167,
     "numMainCharacters": 3,
-    "conflictType": "神怪斗法冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "01003016",
@@ -1254,7 +1254,7 @@
     "numPages": 10,
     "numLines": 378,
     "numMainCharacters": 3,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "01004010",
@@ -1294,7 +1294,7 @@
     "numPages": 6,
     "numLines": 160,
     "numMainCharacters": 6,
-    "conflictType": "其他"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "01004012",
@@ -1378,7 +1378,7 @@
     "numPages": 4,
     "numLines": 84,
     "numMainCharacters": 3,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "01005001",
@@ -1523,7 +1523,7 @@
     "numPages": 9,
     "numLines": 287,
     "numMainCharacters": 5,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "01005009",
@@ -1605,7 +1605,7 @@
     "numPages": 6,
     "numLines": 174,
     "numMainCharacters": 4,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "01005013",
@@ -1710,7 +1710,7 @@
     "numPages": 4,
     "numLines": 51,
     "numMainCharacters": 2,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "01006001",
@@ -2021,7 +2021,7 @@
     "numPages": 2,
     "numLines": 37,
     "numMainCharacters": 3,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "01006016",
@@ -2141,7 +2141,7 @@
     "numPages": 13,
     "numLines": 431,
     "numMainCharacters": 4,
-    "conflictType": "军事战争冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "01007003",
@@ -2183,7 +2183,7 @@
     "numPages": 5,
     "numLines": 155,
     "numMainCharacters": 3,
-    "conflictType": "军事战争冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "01007005",
@@ -2246,7 +2246,7 @@
     "numPages": 4,
     "numLines": 62,
     "numMainCharacters": 2,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "01007011",
@@ -2381,7 +2381,7 @@
     "summary": "此剧紧接《定军山》之后，至曹操失守阳平退居斜谷为止。为入蜀时黄忠、赵云立功最盛时期。按黄忠既斩\n夏侯渊，夺取定军山，曹操闻报，愤甚。即亲统大军为渊报仇。命徐晃为先行，王平副之。蜀军侦悉，诸葛\n亮仍遣黄忠往劫其辎重，又命赵云前往接应。二人既会师，黄忠虽老，勇气十倍，争先往北山烧粮。临行与\n赵云约，过午不归则始往接应。赵云如约，整军以待。及午忠军果无耗，赵云乃引兵往援，单骑突入重围。\n遥见黄忠正抖擞精神，奋力厮杀。然重困垓心，以寡敌众，究渐不支。幸蓦地得赵云冲锋而入。乃得力战突\n围出。赵云既解黄忠围，又往救黄忠副将张著出险。方归营，忽曹操率兵追至，时已晌暮，",
     "sceneCount": 13,
     "authorEra": "清末民初",
-    "narrativePattern": "中段高潮型",
+    "narrativePattern": "多峰起伏型",
     "collectionCode": "01000000",
     "collectionName": "《戏考》",
     "sourceCollection": "戏考",
@@ -2408,7 +2408,7 @@
     "numPages": 9,
     "numLines": 262,
     "numMainCharacters": 8,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "01008006",
@@ -2467,7 +2467,7 @@
     "numPages": 8,
     "numLines": 264,
     "numMainCharacters": 3,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "01008010",
@@ -2505,7 +2505,7 @@
     "numPages": 4,
     "numLines": 155,
     "numMainCharacters": 4,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "01009001",
@@ -2846,7 +2846,7 @@
     "numPages": 4,
     "numLines": 108,
     "numMainCharacters": 2,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "01010002",
@@ -2989,7 +2989,7 @@
     "numPages": 5,
     "numLines": 169,
     "numMainCharacters": 4,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "01010011",
@@ -3048,7 +3048,7 @@
     "numPages": 4,
     "numLines": 64,
     "numMainCharacters": 3,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "01010014",
@@ -3088,7 +3088,7 @@
     "numPages": 6,
     "numLines": 124,
     "numMainCharacters": 6,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "01010016",
@@ -3109,7 +3109,7 @@
     "numPages": 4,
     "numLines": 89,
     "numMainCharacters": 2,
-    "conflictType": "身份命运冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "01010017",
@@ -3149,7 +3149,7 @@
     "numPages": 15,
     "numLines": 399,
     "numMainCharacters": 5,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "01011002",
@@ -3210,7 +3210,7 @@
     "numPages": 10,
     "numLines": 225,
     "numMainCharacters": 8,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "01011005",
@@ -3250,7 +3250,7 @@
     "numPages": 6,
     "numLines": 122,
     "numMainCharacters": 3,
-    "conflictType": "军事战争冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "01011008",
@@ -3412,7 +3412,7 @@
     "numPages": 4,
     "numLines": 114,
     "numMainCharacters": 3,
-    "conflictType": "其他"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "01012001",
@@ -3454,7 +3454,7 @@
     "numPages": 24,
     "numLines": 718,
     "numMainCharacters": 6,
-    "conflictType": "其他"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "01012003",
@@ -3534,7 +3534,7 @@
     "numPages": 3,
     "numLines": 82,
     "numMainCharacters": 5,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "01012007",
@@ -3669,7 +3669,7 @@
     "summary": "考残唐传说中，载晋王李克用，为唐昭宗为朱温篡弑，会集各路王子，发兵征讨。梁将王彦章，除十三太保\n李存孝外，天下无有能敌者。时李存孝已殁数年，故唐营中众王子太保及诸名将，竟无一对手，俱为王彦章\n杀伤，晋王亦气死军中。相持数年，唐兵已势穷力竭，卒至李友金处乞师，得史建唐领兵入援，方告成功。\n此剧事实，系史建唐于布阵之前一夕，私与先锋高行周，夜往山顶同观天象。见西北将星坠地，知王彦章亡\n在旦夕，乃归布阵，卒擒王彦章。",
     "sceneCount": 0,
     "authorEra": "清末民初",
-    "narrativePattern": "渐进升级型",
+    "narrativePattern": "折子片段型",
     "collectionCode": "01000000",
     "collectionName": "《戏考》",
     "sourceCollection": "戏考",
@@ -3738,7 +3738,7 @@
     "numPages": 4,
     "numLines": 93,
     "numMainCharacters": 4,
-    "conflictType": "身份命运冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "01013004",
@@ -3841,7 +3841,7 @@
     "numPages": 7,
     "numLines": 256,
     "numMainCharacters": 4,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "01013009",
@@ -3925,7 +3925,7 @@
     "numPages": 7,
     "numLines": 167,
     "numMainCharacters": 8,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "01013013",
@@ -4005,7 +4005,7 @@
     "numPages": 6,
     "numLines": 189,
     "numMainCharacters": 10,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "01013017",
@@ -4045,7 +4045,7 @@
     "numPages": 6,
     "numLines": 246,
     "numMainCharacters": 4,
-    "conflictType": "市井生活冲突"
+    "conflictType": "其他"
   },
   {
     "id": "01013019",
@@ -4106,7 +4106,7 @@
     "numPages": 6,
     "numLines": 120,
     "numMainCharacters": 3,
-    "conflictType": "军事战争冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "01014002",
@@ -4211,7 +4211,7 @@
     "numPages": 6,
     "numLines": 204,
     "numMainCharacters": 7,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "01014007",
@@ -4335,7 +4335,7 @@
     "numPages": 5,
     "numLines": 121,
     "numMainCharacters": 5,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "01014013",
@@ -4503,7 +4503,7 @@
     "numPages": 5,
     "numLines": 155,
     "numMainCharacters": 7,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "01014022",
@@ -4543,7 +4543,7 @@
     "numPages": 3,
     "numLines": 58,
     "numMainCharacters": 2,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "01015002",
@@ -4627,7 +4627,7 @@
     "numPages": 18,
     "numLines": 636,
     "numMainCharacters": 8,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "01015007",
@@ -4812,7 +4812,7 @@
     "numPages": 10,
     "numLines": 279,
     "numMainCharacters": 10,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "01015017",
@@ -5218,7 +5218,7 @@
     "numPages": 9,
     "numLines": 244,
     "numMainCharacters": 14,
-    "conflictType": "身份命运冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "01017006",
@@ -5239,7 +5239,7 @@
     "numPages": 6,
     "numLines": 226,
     "numMainCharacters": 6,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "市井生活冲突"
   },
   {
     "id": "01017007",
@@ -5363,7 +5363,7 @@
     "numPages": 3,
     "numLines": 30,
     "numMainCharacters": 2,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "01017013",
@@ -5462,7 +5462,7 @@
     "numPages": 9,
     "numLines": 255,
     "numMainCharacters": 6,
-    "conflictType": "神怪斗法冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "01018004",
@@ -5729,7 +5729,7 @@
     "numPages": 6,
     "numLines": 135,
     "numMainCharacters": 5,
-    "conflictType": "军事战争冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "01019005",
@@ -5834,7 +5834,7 @@
     "numPages": 5,
     "numLines": 166,
     "numMainCharacters": 7,
-    "conflictType": "身份命运冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "01019012",
@@ -5914,7 +5914,7 @@
     "numPages": 5,
     "numLines": 133,
     "numMainCharacters": 7,
-    "conflictType": "其他"
+    "conflictType": "市井生活冲突"
   },
   {
     "id": "01020003",
@@ -5977,7 +5977,7 @@
     "numPages": 5,
     "numLines": 142,
     "numMainCharacters": 13,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "01020006",
@@ -6566,7 +6566,7 @@
     "numPages": 4,
     "numLines": 84,
     "numMainCharacters": 6,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "01023008",
@@ -6608,7 +6608,7 @@
     "numPages": 5,
     "numLines": 95,
     "numMainCharacters": 3,
-    "conflictType": "军事战争冲突"
+    "conflictType": "神怪斗法冲突"
   },
   {
     "id": "01023010",
@@ -6629,7 +6629,7 @@
     "numPages": 5,
     "numLines": 107,
     "numMainCharacters": 6,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "01023012",
@@ -6669,7 +6669,7 @@
     "numPages": 27,
     "numLines": 909,
     "numMainCharacters": 23,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "01024002",
@@ -6772,7 +6772,7 @@
     "numPages": 6,
     "numLines": 195,
     "numMainCharacters": 5,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "01024007",
@@ -6812,7 +6812,7 @@
     "numPages": 18,
     "numLines": 618,
     "numMainCharacters": 16,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "01024009",
@@ -6871,7 +6871,7 @@
     "numPages": 24,
     "numLines": 682,
     "numMainCharacters": 13,
-    "conflictType": "复仇报恩冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "01025003",
@@ -6911,7 +6911,7 @@
     "numPages": 4,
     "numLines": 93,
     "numMainCharacters": 3,
-    "conflictType": "市井生活冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "01025006",
@@ -7115,7 +7115,7 @@
     "numPages": 18,
     "numLines": 653,
     "numMainCharacters": 17,
-    "conflictType": "身份命运冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "01027002",
@@ -7134,7 +7134,7 @@
     "numPages": 11,
     "numLines": 370,
     "numMainCharacters": 15,
-    "conflictType": "复仇报恩冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "01027003",
@@ -7172,7 +7172,7 @@
     "numPages": 11,
     "numLines": 347,
     "numMainCharacters": 17,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "01027005",
@@ -7210,7 +7210,7 @@
     "numPages": 11,
     "numLines": 328,
     "numMainCharacters": 14,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "神怪斗法冲突"
   },
   {
     "id": "01027007",
@@ -7353,7 +7353,7 @@
     "numPages": 5,
     "numLines": 170,
     "numMainCharacters": 16,
-    "conflictType": "其他"
+    "conflictType": "神怪斗法冲突"
   },
   {
     "id": "01028001",
@@ -7372,7 +7372,7 @@
     "numPages": 19,
     "numLines": 749,
     "numMainCharacters": 7,
-    "conflictType": "市井生活冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "01028002",
@@ -7393,7 +7393,7 @@
     "numPages": 27,
     "numLines": 905,
     "numMainCharacters": 33,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "01028003",
@@ -7681,7 +7681,7 @@
     "numPages": 15,
     "numLines": 558,
     "numMainCharacters": 10,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "市井生活冲突"
   },
   {
     "id": "01030006",
@@ -7841,7 +7841,7 @@
     "numPages": 8,
     "numLines": 263,
     "numMainCharacters": 2,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "01031006",
@@ -8005,7 +8005,7 @@
     "numPages": 5,
     "numLines": 146,
     "numMainCharacters": 3,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "01032005",
@@ -8045,7 +8045,7 @@
     "numPages": 4,
     "numLines": 86,
     "numMainCharacters": 7,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "01032007",
@@ -8087,7 +8087,7 @@
     "numPages": 4,
     "numLines": 92,
     "numMainCharacters": 2,
-    "conflictType": "其他"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "01032009",
@@ -8329,7 +8329,7 @@
     "numPages": 5,
     "numLines": 146,
     "numMainCharacters": 3,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "01035003",
@@ -8586,7 +8586,7 @@
     "numPages": 7,
     "numLines": 193,
     "numMainCharacters": 1,
-    "conflictType": "其他"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "01037003",
@@ -8605,7 +8605,7 @@
     "numPages": 5,
     "numLines": 150,
     "numMainCharacters": 3,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "01037004",
@@ -8645,7 +8645,7 @@
     "numPages": 4,
     "numLines": 159,
     "numMainCharacters": 5,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "01037006",
@@ -8708,7 +8708,7 @@
     "numPages": 9,
     "numLines": 282,
     "numMainCharacters": 8,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "市井生活冲突"
   },
   {
     "id": "01038001",
@@ -8950,7 +8950,7 @@
     "numPages": 6,
     "numLines": 105,
     "numMainCharacters": 7,
-    "conflictType": "其他"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "01039005",
@@ -8969,7 +8969,7 @@
     "numPages": 7,
     "numLines": 223,
     "numMainCharacters": 4,
-    "conflictType": "其他"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "01039006",
@@ -9011,7 +9011,7 @@
     "numPages": 20,
     "numLines": 403,
     "numMainCharacters": 6,
-    "conflictType": "军事战争冲突"
+    "conflictType": "神怪斗法冲突"
   },
   {
     "id": "01040001",
@@ -9380,7 +9380,7 @@
     "numPages": 6,
     "numLines": 150,
     "numMainCharacters": 5,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "02001023",
@@ -9578,7 +9578,7 @@
     "numPages": 6,
     "numLines": 192,
     "numMainCharacters": 3,
-    "conflictType": "复仇报恩冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "02001047",
@@ -9732,7 +9732,7 @@
     "numPages": 20,
     "numLines": 682,
     "numMainCharacters": 5,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "02002017",
@@ -9770,7 +9770,7 @@
     "numPages": 5,
     "numLines": 125,
     "numMainCharacters": 2,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "02002032",
@@ -9781,7 +9781,7 @@
     "summary": "东汉广陵令张纲，因中刚正直，除暴安良，被皇帝擢升为御史，旋又改派外任，巡视河南兼理提督军门。时\n太后之侄梁冀，专权误国，目无君上，其子梁英，在河南原籍无恶不为。梁冀恐张纲到河南后，对其子不利，\n特备酒宴拜托。张纲迄不介意，且上任之时，特雇小车，满载绸缎，只令一差人随往，隐姓埋名，微服私\n访。及至河南，适遇梁英强抢民女，杀死其表兄，并令人将张纲所带之绸缎悉行抢去。张纲目睹一切，除令\n民女之弟及其舅父，向其巡抚部院衙门告状外，随即命人将梁英住宅查封，并禁任何人出入云。",
     "sceneCount": 16,
     "authorEra": "清末民初",
-    "narrativePattern": "尾重收束型",
+    "narrativePattern": "渐进升级型",
     "collectionCode": "02000000",
     "collectionName": "《国剧大成》",
     "sourceCollection": "国剧大成",
@@ -9886,7 +9886,7 @@
     "numPages": 4,
     "numLines": 100,
     "numMainCharacters": 4,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "02003004",
@@ -9975,7 +9975,7 @@
     "summary": "祢衡击鼓骂曹操后，曹操乃用借刀杀人之计，将祢衡荐往刘表处。临行之时，并令张辽备酒长亭，荀彧、荀\n攸、郭嘉及程昱等，分别敬酒，借机侮辱。祢衡亦不肯示弱，一一反骂后，扬鞭而去。",
     "sceneCount": 2,
     "authorEra": "清末民初",
-    "narrativePattern": "尾重收束型",
+    "narrativePattern": "急起直下型",
     "collectionCode": "02000000",
     "collectionName": "《国剧大成》",
     "sourceCollection": "国剧大成",
@@ -10021,7 +10021,7 @@
     "numPages": 7,
     "numLines": 179,
     "numMainCharacters": 4,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "02003033",
@@ -10335,7 +10335,7 @@
     "numPages": 13,
     "numLines": 293,
     "numMainCharacters": 6,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "02005009",
@@ -10354,7 +10354,7 @@
     "numPages": 11,
     "numLines": 239,
     "numMainCharacters": 5,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "02005010",
@@ -10373,7 +10373,7 @@
     "numPages": 13,
     "numLines": 316,
     "numMainCharacters": 6,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "神怪斗法冲突"
   },
   {
     "id": "02005011",
@@ -10411,7 +10411,7 @@
     "numPages": 14,
     "numLines": 340,
     "numMainCharacters": 7,
-    "conflictType": "军事战争冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "02005013",
@@ -10430,7 +10430,7 @@
     "numPages": 12,
     "numLines": 277,
     "numMainCharacters": 5,
-    "conflictType": "其他"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "02005014",
@@ -10449,7 +10449,7 @@
     "numPages": 10,
     "numLines": 183,
     "numMainCharacters": 6,
-    "conflictType": "其他"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "02005015",
@@ -10679,7 +10679,7 @@
     "numPages": 4,
     "numLines": 74,
     "numMainCharacters": 8,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "02006009",
@@ -10755,7 +10755,7 @@
     "numPages": 4,
     "numLines": 95,
     "numMainCharacters": 2,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "神怪斗法冲突"
   },
   {
     "id": "02006027",
@@ -11056,7 +11056,7 @@
     "numPages": 2,
     "numLines": 35,
     "numMainCharacters": 2,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "02006049",
@@ -11229,7 +11229,7 @@
     "numPages": 5,
     "numLines": 112,
     "numMainCharacters": 6,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "02006074",
@@ -11248,7 +11248,7 @@
     "numPages": 5,
     "numLines": 126,
     "numMainCharacters": 8,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "02007023",
@@ -11412,7 +11412,7 @@
     "numPages": 8,
     "numLines": 199,
     "numMainCharacters": 2,
-    "conflictType": "神怪斗法冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "02008004",
@@ -11480,7 +11480,7 @@
     "summary": "五代时周朝之李广（并非汉之李广），因功高封为奉命侯。奉旨出外放饷，公毕回朝。及抵皇城，城门紧闭，\n不准入内。询问护兵，始知系要斩正宫杨国真。李广大为惊讶。当既向护兵特别通融，得以入城。迳赴法\n场，与监斩官石彦龙交涉，要与国母杨国真面谈。石彦龙慑于李广威名，只好应允。杨国真乃将西凉不进贡，\n而进美人石美容，周义王宠幸，封为西宫，荒淫无度，不理朝政，入宫进谏，反诬为有意谋反，竟问斩刑\n云云。李广不得已，赴宫廷见周义王，力谏国母不能斩之原因，周义王不听，反将宝剑悬于午门。再有谏者，\n一同问罪。李广不得已，将其弟李文从校场找回，商议营救国母，毫无良策。其家将李福",
     "sceneCount": 2,
     "authorEra": "清末民初",
-    "narrativePattern": "尾重收束型",
+    "narrativePattern": "急起直下型",
     "collectionCode": "02000000",
     "collectionName": "《国剧大成》",
     "sourceCollection": "国剧大成",
@@ -11499,7 +11499,7 @@
     "summary": "五代时周朝之李广（并非汉之李广），因功高封为奉命侯。奉旨出外放饷，公毕回朝。及抵皇城，城门紧闭，\n不准入内。询问护兵，始知系要斩正宫杨国真。李广大为惊讶。当既向护兵特别通融，得以入城。迳赴法\n场，与监斩官石彦龙交涉，要与国母杨国真面谈。石彦龙慑于李广威名，只好应允。杨国真乃将西凉不进贡，\n而进美人石美容，周义王宠幸，封为西宫，荒淫无度，不理朝政，入宫进谏，反诬为有意谋反，竟问斩刑\n云云。李广不得已，赴宫廷见周义王，力谏国母不能斩之原因，周义王不听，反将宝剑悬于午门。再有谏者，\n一同问罪。李广不得已，将其弟李文从校场找回，商议营救国母，毫无良策。其家将李福",
     "sceneCount": 8,
     "authorEra": "清末民初",
-    "narrativePattern": "急起直下型",
+    "narrativePattern": "多峰起伏型",
     "collectionCode": "02000000",
     "collectionName": "《国剧大成》",
     "sourceCollection": "国剧大成",
@@ -11659,7 +11659,7 @@
     "numPages": 4,
     "numLines": 89,
     "numMainCharacters": 7,
-    "conflictType": "身份命运冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "02008021",
@@ -11754,7 +11754,7 @@
     "numPages": 5,
     "numLines": 184,
     "numMainCharacters": 2,
-    "conflictType": "身份命运冲突"
+    "conflictType": "神怪斗法冲突"
   },
   {
     "id": "02008036",
@@ -11851,7 +11851,7 @@
     "numPages": 5,
     "numLines": 193,
     "numMainCharacters": 5,
-    "conflictType": "复仇报恩冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "02008052",
@@ -11927,7 +11927,7 @@
     "numPages": 7,
     "numLines": 207,
     "numMainCharacters": 5,
-    "conflictType": "军事战争冲突"
+    "conflictType": "神怪斗法冲突"
   },
   {
     "id": "02008061",
@@ -11965,7 +11965,7 @@
     "numPages": 22,
     "numLines": 880,
     "numMainCharacters": 3,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "02009026",
@@ -11986,7 +11986,7 @@
     "numPages": 2,
     "numLines": 30,
     "numMainCharacters": 1,
-    "conflictType": "复仇报恩冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "02009029",
@@ -12005,7 +12005,7 @@
     "numPages": 5,
     "numLines": 162,
     "numMainCharacters": 4,
-    "conflictType": "其他"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "02009035",
@@ -12391,7 +12391,7 @@
     "numPages": 19,
     "numLines": 636,
     "numMainCharacters": 13,
-    "conflictType": "复仇报恩冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "02012002",
@@ -12488,7 +12488,7 @@
     "numPages": 4,
     "numLines": 88,
     "numMainCharacters": 1,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "02012008",
@@ -12509,7 +12509,7 @@
     "numPages": 5,
     "numLines": 120,
     "numMainCharacters": 1,
-    "conflictType": "市井生活冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "02012009",
@@ -12530,7 +12530,7 @@
     "numPages": 6,
     "numLines": 129,
     "numMainCharacters": 1,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "02012010",
@@ -12572,7 +12572,7 @@
     "numPages": 3,
     "numLines": 48,
     "numMainCharacters": 2,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "02012012",
@@ -12593,7 +12593,7 @@
     "numPages": 6,
     "numLines": 165,
     "numMainCharacters": 7,
-    "conflictType": "复仇报恩冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "02012013",
@@ -12631,7 +12631,7 @@
     "numPages": 19,
     "numLines": 649,
     "numMainCharacters": 16,
-    "conflictType": "其他"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "02012024",
@@ -12650,7 +12650,7 @@
     "numPages": 13,
     "numLines": 431,
     "numMainCharacters": 7,
-    "conflictType": "其他"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "02012033",
@@ -12669,7 +12669,7 @@
     "numPages": 9,
     "numLines": 265,
     "numMainCharacters": 3,
-    "conflictType": "其他"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "02012034",
@@ -12791,7 +12791,7 @@
     "numPages": 11,
     "numLines": 376,
     "numMainCharacters": 4,
-    "conflictType": "身份命运冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "02012041",
@@ -12875,7 +12875,7 @@
     "numPages": 7,
     "numLines": 167,
     "numMainCharacters": 3,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "02012045",
@@ -12938,7 +12938,7 @@
     "numPages": 10,
     "numLines": 269,
     "numMainCharacters": 4,
-    "conflictType": "军事战争冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "03001002",
@@ -12976,7 +12976,7 @@
     "numPages": 11,
     "numLines": 342,
     "numMainCharacters": 3,
-    "conflictType": "其他"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "03001004",
@@ -13075,7 +13075,7 @@
     "numPages": 5,
     "numLines": 131,
     "numMainCharacters": 2,
-    "conflictType": "身份命运冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "03002003",
@@ -13094,7 +13094,7 @@
     "numPages": 13,
     "numLines": 534,
     "numMainCharacters": 5,
-    "conflictType": "身份命运冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "03002004",
@@ -13174,7 +13174,7 @@
     "numPages": 5,
     "numLines": 87,
     "numMainCharacters": 1,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "其他"
   },
   {
     "id": "03003003",
@@ -13185,7 +13185,7 @@
     "summary": "李广、李刚凯旋回朝，国舅马兰在庆功筵陪宴，遭李刚殴辱。马妃殉情偏袒其兄，因之谗害李广。周赧王素\n宠马妃，乃竟不念李氏殊勋，立付斩刑。虽经杨太后力保获赦，遣内侍驰传口诏，而马兰诡称赦旨前来，李\n广已被处斩。李刚遂率部怒叛，勒逼赧王交出马妃并将其处死。",
     "sceneCount": 11,
     "authorEra": "传统",
-    "narrativePattern": "折子片段型",
+    "narrativePattern": "多峰起伏型",
     "collectionCode": "03000000",
     "collectionName": "《京剧汇编》",
     "sourceCollection": "京剧汇编",
@@ -13214,7 +13214,7 @@
     "numPages": 4,
     "numLines": 80,
     "numMainCharacters": 6,
-    "conflictType": "其他"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "03003005",
@@ -13315,7 +13315,7 @@
     "numPages": 7,
     "numLines": 222,
     "numMainCharacters": 5,
-    "conflictType": "身份命运冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "03005001",
@@ -13412,7 +13412,7 @@
     "numPages": 5,
     "numLines": 126,
     "numMainCharacters": 2,
-    "conflictType": "身份命运冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "03006006",
@@ -13631,7 +13631,7 @@
     "numPages": 12,
     "numLines": 417,
     "numMainCharacters": 2,
-    "conflictType": "军事战争冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "03009001",
@@ -13726,7 +13726,7 @@
     "numPages": 25,
     "numLines": 924,
     "numMainCharacters": 3,
-    "conflictType": "军事战争冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "03012001",
@@ -13764,7 +13764,7 @@
     "numPages": 5,
     "numLines": 124,
     "numMainCharacters": 3,
-    "conflictType": "其他"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "03012003",
@@ -13983,7 +13983,7 @@
     "numPages": 30,
     "numLines": 1248,
     "numMainCharacters": 8,
-    "conflictType": "身份命运冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "03016001",
@@ -14023,7 +14023,7 @@
     "numPages": 17,
     "numLines": 433,
     "numMainCharacters": 5,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "03016003",
@@ -14137,7 +14137,7 @@
     "numPages": 17,
     "numLines": 554,
     "numMainCharacters": 1,
-    "conflictType": "军事战争冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "03017004",
@@ -14234,7 +14234,7 @@
     "numPages": 10,
     "numLines": 414,
     "numMainCharacters": 3,
-    "conflictType": "市井生活冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "03019002",
@@ -14350,7 +14350,7 @@
     "numPages": 12,
     "numLines": 388,
     "numMainCharacters": 3,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "03021001",
@@ -14388,7 +14388,7 @@
     "numPages": 2,
     "numLines": 55,
     "numMainCharacters": 3,
-    "conflictType": "身份命运冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "03021003",
@@ -14445,7 +14445,7 @@
     "numPages": 5,
     "numLines": 137,
     "numMainCharacters": 2,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "03021006",
@@ -14464,7 +14464,7 @@
     "numPages": 6,
     "numLines": 185,
     "numMainCharacters": 4,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "03021007",
@@ -14521,7 +14521,7 @@
     "numPages": 8,
     "numLines": 241,
     "numMainCharacters": 5,
-    "conflictType": "其他"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "03021010",
@@ -14578,7 +14578,7 @@
     "numPages": 4,
     "numLines": 99,
     "numMainCharacters": 5,
-    "conflictType": "军事战争冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "03021013",
@@ -14810,7 +14810,7 @@
     "numPages": 4,
     "numLines": 53,
     "numMainCharacters": 2,
-    "conflictType": "其他"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "03027005",
@@ -15013,7 +15013,7 @@
     "summary": "宋、辽不和，连年争战，宋将杨延昭与辽将韩昌大战于雁门关，未分胜负。宋仁宗命佘太君领兵助战。十二\n年前，佘太君之子杨延辉与杨延顺均被辽兵擒去，杨延辉改名木易光，配碧莲公主；杨延顺改名王司徒，配\n青莲公主，均有子女。闻佘太君率兵至，二人均欲过营探母。杨延顺求助于青莲公主，经青莲公主诓令箭，\n遂得混过雁门关。",
     "sceneCount": 15,
     "authorEra": "传统",
-    "narrativePattern": "急起直下型",
+    "narrativePattern": "多峰起伏型",
     "collectionCode": "03000000",
     "collectionName": "《京剧汇编》",
     "sourceCollection": "京剧汇编",
@@ -15040,7 +15040,7 @@
     "numPages": 12,
     "numLines": 336,
     "numMainCharacters": 9,
-    "conflictType": "军事战争冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "03030003",
@@ -15059,7 +15059,7 @@
     "numPages": 11,
     "numLines": 334,
     "numMainCharacters": 7,
-    "conflictType": "军事战争冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "03030004",
@@ -15211,7 +15211,7 @@
     "numPages": 10,
     "numLines": 378,
     "numMainCharacters": 6,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "03031006",
@@ -15230,7 +15230,7 @@
     "numPages": 10,
     "numLines": 418,
     "numMainCharacters": 5,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "市井生活冲突"
   },
   {
     "id": "03031007",
@@ -15249,7 +15249,7 @@
     "numPages": 7,
     "numLines": 308,
     "numMainCharacters": 4,
-    "conflictType": "市井生活冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "03031008",
@@ -15441,7 +15441,7 @@
     "numPages": 13,
     "numLines": 369,
     "numMainCharacters": 1,
-    "conflictType": "军事战争冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "03034005",
@@ -15538,7 +15538,7 @@
     "numPages": 18,
     "numLines": 663,
     "numMainCharacters": 2,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "03038001",
@@ -15614,7 +15614,7 @@
     "numPages": 16,
     "numLines": 590,
     "numMainCharacters": 4,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "03039002",
@@ -15652,7 +15652,7 @@
     "numPages": 2,
     "numLines": 48,
     "numMainCharacters": 1,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "03039005",
@@ -15671,7 +15671,7 @@
     "numPages": 11,
     "numLines": 343,
     "numMainCharacters": 5,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "03039006",
@@ -15709,7 +15709,7 @@
     "numPages": 9,
     "numLines": 285,
     "numMainCharacters": 5,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "03040001",
@@ -15844,7 +15844,7 @@
     "numPages": 18,
     "numLines": 618,
     "numMainCharacters": 7,
-    "conflictType": "其他"
+    "conflictType": "市井生活冲突"
   },
   {
     "id": "03041005",
@@ -15863,7 +15863,7 @@
     "numPages": 6,
     "numLines": 165,
     "numMainCharacters": 2,
-    "conflictType": "其他"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "03041006",
@@ -15882,7 +15882,7 @@
     "numPages": 2,
     "numLines": 50,
     "numMainCharacters": 1,
-    "conflictType": "其他"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "03041007",
@@ -15939,7 +15939,7 @@
     "numPages": 11,
     "numLines": 323,
     "numMainCharacters": 2,
-    "conflictType": "身份命运冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "03042003",
@@ -15958,7 +15958,7 @@
     "numPages": 26,
     "numLines": 909,
     "numMainCharacters": 13,
-    "conflictType": "军事战争冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "03042004",
@@ -16458,7 +16458,7 @@
     "numPages": 17,
     "numLines": 638,
     "numMainCharacters": 4,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "03051004",
@@ -16591,7 +16591,7 @@
     "numPages": 38,
     "numLines": 1260,
     "numMainCharacters": 5,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "03053002",
@@ -16678,7 +16678,7 @@
     "summary": "包拯放粮回朝，为妖精所见。众妖扮假包拯等扰乱之。包拯遂请来天神降妖。",
     "sceneCount": 2,
     "authorEra": "传统",
-    "narrativePattern": "尾重收束型",
+    "narrativePattern": "急起直下型",
     "collectionCode": "03000000",
     "collectionName": "《京剧汇编》",
     "sourceCollection": "京剧汇编",
@@ -16878,7 +16878,7 @@
     "numPages": 13,
     "numLines": 325,
     "numMainCharacters": 5,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "03054010",
@@ -16935,7 +16935,7 @@
     "numPages": 12,
     "numLines": 358,
     "numMainCharacters": 8,
-    "conflictType": "军事战争冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "03055003",
@@ -16954,7 +16954,7 @@
     "numPages": 5,
     "numLines": 108,
     "numMainCharacters": 5,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "03055004",
@@ -16973,7 +16973,7 @@
     "numPages": 4,
     "numLines": 87,
     "numMainCharacters": 4,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "03055005",
@@ -17150,7 +17150,7 @@
     "numPages": 5,
     "numLines": 174,
     "numMainCharacters": 5,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "其他"
   },
   {
     "id": "03057006",
@@ -17226,7 +17226,7 @@
     "numPages": 6,
     "numLines": 193,
     "numMainCharacters": 4,
-    "conflictType": "其他"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "03058004",
@@ -17399,7 +17399,7 @@
     "numPages": 4,
     "numLines": 137,
     "numMainCharacters": 2,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "神怪斗法冲突"
   },
   {
     "id": "03060005",
@@ -17475,7 +17475,7 @@
     "numPages": 23,
     "numLines": 831,
     "numMainCharacters": 5,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "03064003",
@@ -17532,7 +17532,7 @@
     "numPages": 15,
     "numLines": 551,
     "numMainCharacters": 3,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "03065003",
@@ -17608,7 +17608,7 @@
     "numPages": 7,
     "numLines": 148,
     "numMainCharacters": 2,
-    "conflictType": "军事战争冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "03066002",
@@ -17722,7 +17722,7 @@
     "numPages": 11,
     "numLines": 277,
     "numMainCharacters": 8,
-    "conflictType": "军事战争冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "03070003",
@@ -17855,7 +17855,7 @@
     "numPages": 9,
     "numLines": 225,
     "numMainCharacters": 1,
-    "conflictType": "身份命运冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "03074003",
@@ -17975,7 +17975,7 @@
     "numPages": 4,
     "numLines": 112,
     "numMainCharacters": 2,
-    "conflictType": "身份命运冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "03075003",
@@ -18281,7 +18281,7 @@
     "numPages": 3,
     "numLines": 95,
     "numMainCharacters": 2,
-    "conflictType": "其他"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "03080008",
@@ -18319,7 +18319,7 @@
     "numPages": 10,
     "numLines": 324,
     "numMainCharacters": 2,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "03084002",
@@ -18376,7 +18376,7 @@
     "numPages": 8,
     "numLines": 251,
     "numMainCharacters": 2,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "03084006",
@@ -18414,7 +18414,7 @@
     "numPages": 10,
     "numLines": 329,
     "numMainCharacters": 4,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "03085003",
@@ -18454,7 +18454,7 @@
     "numPages": 7,
     "numLines": 181,
     "numMainCharacters": 1,
-    "conflictType": "其他"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "03088001",
@@ -18530,7 +18530,7 @@
     "numPages": 10,
     "numLines": 295,
     "numMainCharacters": 9,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "03090001",
@@ -18853,7 +18853,7 @@
     "numPages": 4,
     "numLines": 58,
     "numMainCharacters": 1,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "03093001",
@@ -19062,7 +19062,7 @@
     "numPages": 4,
     "numLines": 88,
     "numMainCharacters": 2,
-    "conflictType": "其他"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "03096004",
@@ -19100,7 +19100,7 @@
     "numPages": 11,
     "numLines": 353,
     "numMainCharacters": 6,
-    "conflictType": "军事战争冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "03096006",
@@ -19157,7 +19157,7 @@
     "numPages": 7,
     "numLines": 197,
     "numMainCharacters": 7,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "03097003",
@@ -19596,7 +19596,7 @@
     "numPages": 17,
     "numLines": 514,
     "numMainCharacters": 1,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "03106001",
@@ -19786,7 +19786,7 @@
     "numPages": 13,
     "numLines": 425,
     "numMainCharacters": 2,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "03109003",
@@ -19805,7 +19805,7 @@
     "numPages": 10,
     "numLines": 367,
     "numMainCharacters": 6,
-    "conflictType": "军事战争冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "03109004",
@@ -19923,7 +19923,7 @@
     "numPages": 10,
     "numLines": 313,
     "numMainCharacters": 8,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "04003001",
@@ -19942,7 +19942,7 @@
     "numPages": 16,
     "numLines": 526,
     "numMainCharacters": 7,
-    "conflictType": "身份命运冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "04003002",
@@ -20041,7 +20041,7 @@
     "numPages": 4,
     "numLines": 126,
     "numMainCharacters": 2,
-    "conflictType": "复仇报恩冲突"
+    "conflictType": "市井生活冲突"
   },
   {
     "id": "04008002",
@@ -20079,7 +20079,7 @@
     "numPages": 5,
     "numLines": 141,
     "numMainCharacters": 3,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "04009003",
@@ -20195,7 +20195,7 @@
     "numPages": 5,
     "numLines": 162,
     "numMainCharacters": 4,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "04010006",
@@ -20216,7 +20216,7 @@
     "numPages": 6,
     "numLines": 240,
     "numMainCharacters": 2,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "04011001",
@@ -20237,7 +20237,7 @@
     "numPages": 5,
     "numLines": 180,
     "numMainCharacters": 4,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "04011002",
@@ -20317,7 +20317,7 @@
     "numPages": 9,
     "numLines": 385,
     "numMainCharacters": 1,
-    "conflictType": "其他"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "04012001",
@@ -20509,7 +20509,7 @@
     "summary": "少女孙玉姣在门外刺绣，正遇青年傅朋路过，二人相见，彼此爱慕，傅朋故意遗下玉镯一只，以为表记。孙\n玉姣拾镯时，被她的邻居刘婆看见，刘婆就到了孙家，开了一点玩笑，然后表示愿为傅、孙二人成全亲事。",
     "sceneCount": 1,
     "authorEra": "传统",
-    "narrativePattern": "平稳铺陈型",
+    "narrativePattern": "折子片段型",
     "collectionCode": "04000000",
     "collectionName": "《京剧丛刊》",
     "sourceCollection": "京剧丛刊",
@@ -20660,7 +20660,7 @@
     "numPages": 15,
     "numLines": 568,
     "numMainCharacters": 6,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "04021002",
@@ -20700,7 +20700,7 @@
     "numPages": 6,
     "numLines": 130,
     "numMainCharacters": 2,
-    "conflictType": "市井生活冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "04022001",
@@ -20896,7 +20896,7 @@
     "numPages": 12,
     "numLines": 533,
     "numMainCharacters": 5,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "04026001",
@@ -20907,7 +20907,7 @@
     "summary": "被爹娘姣养在深闺里的杜丽娘，背着父母和老师，与侍女春香同到南安府的后花园去春游。满园春色，都付\n于断井颓垣，使这位知书守礼的官家小姐顿起伤春之感。杜丽娘游倦归房，朦胧睡去，与一个手持柳枝、口\n称到处寻她的少年书生柳梦梅在园中相会。后花园的花神们并出来保护他们。两人分别后，适杜母来临，见\n女儿昼寝神思困倦；把她叫醒，并嘱咐她：“后花园冷静，以后少去闲行。”",
     "sceneCount": 0,
     "authorEra": "传统",
-    "narrativePattern": "尾重收束型",
+    "narrativePattern": "中段高潮型",
     "collectionCode": "04000000",
     "collectionName": "《京剧丛刊》",
     "sourceCollection": "京剧丛刊",
@@ -20978,7 +20978,7 @@
     "numPages": 17,
     "numLines": 763,
     "numMainCharacters": 3,
-    "conflictType": "身份命运冲突"
+    "conflictType": "市井生活冲突"
   },
   {
     "id": "04027001",
@@ -21016,7 +21016,7 @@
     "numPages": 18,
     "numLines": 569,
     "numMainCharacters": 8,
-    "conflictType": "复仇报恩冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "04029002",
@@ -21113,7 +21113,7 @@
     "numPages": 11,
     "numLines": 411,
     "numMainCharacters": 9,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "04037001",
@@ -21151,7 +21151,7 @@
     "numPages": 5,
     "numLines": 121,
     "numMainCharacters": 5,
-    "conflictType": "身份命运冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "04040002",
@@ -21265,7 +21265,7 @@
     "numPages": 11,
     "numLines": 381,
     "numMainCharacters": 4,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "05002003",
@@ -21436,7 +21436,7 @@
     "numPages": 5,
     "numLines": 135,
     "numMainCharacters": 1,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "05004008",
@@ -21818,7 +21818,7 @@
     "numPages": 9,
     "numLines": 283,
     "numMainCharacters": 2,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "05013004",
@@ -21837,7 +21837,7 @@
     "numPages": 13,
     "numLines": 451,
     "numMainCharacters": 3,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "05013005",
@@ -22124,7 +22124,7 @@
     "numPages": 22,
     "numLines": 850,
     "numMainCharacters": 6,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "05018003",
@@ -22143,7 +22143,7 @@
     "numPages": 20,
     "numLines": 686,
     "numMainCharacters": 5,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "05018004",
@@ -22200,7 +22200,7 @@
     "numPages": 22,
     "numLines": 828,
     "numMainCharacters": 6,
-    "conflictType": "军事战争冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "05019002",
@@ -22466,7 +22466,7 @@
     "numPages": 4,
     "numLines": 84,
     "numMainCharacters": 3,
-    "conflictType": "其他"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "05025001",
@@ -22485,7 +22485,7 @@
     "numPages": 20,
     "numLines": 776,
     "numMainCharacters": 2,
-    "conflictType": "神怪斗法冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "05025002",
@@ -22618,7 +22618,7 @@
     "numPages": 5,
     "numLines": 127,
     "numMainCharacters": 4,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "08005006",
@@ -22840,7 +22840,7 @@
     "summary": "宋江为郓城县书吏，昵土娼阎惜姣，为营乌龙院以居其母女，给衣食。宋江有徒张文远，性佻健，喜冶游，\n常乘间入院，与阎惜姣言笑取乐。阎惜姣亦爱张文远年少风流，遂与之通。久之，乐张文远而厌宋江。人言\n啧啧，宋江有所闻，责阎惜姣忘恩负心。阎惜姣不服，反唇相讥，宋江大受奚落。宋江在郓城，常勾结梁山\n大盗晁盖等，私相往还。一日，晁盖遣刘唐至宋江处下书赠金，宋江藏书金于招文袋。夜宿乌龙院，黎明即\n匆匆出门。至中途，忽悟招文袋遗失在院，大惊，急回院搜索不得，意必为阎惜姣所匿。问之，阎惜姣直认\n不讳。宋江哀恳再三，许尽与其金，而求将书掷还。阎惜姣掉头不允，逼宋江亲立笔据，许",
     "sceneCount": 2,
     "authorEra": "传统",
-    "narrativePattern": "尾重收束型",
+    "narrativePattern": "急起直下型",
     "collectionCode": "10000000",
     "collectionName": "《戏考大全》",
     "sourceCollection": "戏考大全",
@@ -22907,7 +22907,7 @@
     "numPages": 4,
     "numLines": 90,
     "numMainCharacters": 4,
-    "conflictType": "其他"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "13003007",
@@ -23040,7 +23040,7 @@
     "numPages": 12,
     "numLines": 440,
     "numMainCharacters": 8,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "14001002",
@@ -23116,7 +23116,7 @@
     "numPages": 6,
     "numLines": 210,
     "numMainCharacters": 10,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "14001006",
@@ -23249,7 +23249,7 @@
     "numPages": 9,
     "numLines": 329,
     "numMainCharacters": 7,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "14002005",
@@ -23287,7 +23287,7 @@
     "numPages": 7,
     "numLines": 191,
     "numMainCharacters": 8,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "14002007",
@@ -23306,7 +23306,7 @@
     "numPages": 10,
     "numLines": 327,
     "numMainCharacters": 5,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "14002008",
@@ -23344,7 +23344,7 @@
     "numPages": 3,
     "numLines": 89,
     "numMainCharacters": 3,
-    "conflictType": "神怪斗法冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "14002010",
@@ -23363,7 +23363,7 @@
     "numPages": 4,
     "numLines": 137,
     "numMainCharacters": 4,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "14003003",
@@ -23575,7 +23575,7 @@
     "numPages": 4,
     "numLines": 115,
     "numMainCharacters": 2,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "70001106",
@@ -23750,7 +23750,7 @@
     "numPages": 10,
     "numLines": 316,
     "numMainCharacters": 3,
-    "conflictType": "复仇报恩冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "70001310",
@@ -23963,7 +23963,7 @@
     "numPages": 20,
     "numLines": 799,
     "numMainCharacters": 17,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "70003101",
@@ -24102,7 +24102,7 @@
     "numPages": 6,
     "numLines": 162,
     "numMainCharacters": 6,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "70003108",
@@ -24258,7 +24258,7 @@
     "numPages": 6,
     "numLines": 193,
     "numMainCharacters": 7,
-    "conflictType": "军事战争冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "70003116",
@@ -24412,7 +24412,7 @@
     "numPages": 11,
     "numLines": 378,
     "numMainCharacters": 5,
-    "conflictType": "军事战争冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "70003124",
@@ -24834,7 +24834,7 @@
     "numPages": 6,
     "numLines": 110,
     "numMainCharacters": 5,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "70005111",
@@ -24967,7 +24967,7 @@
     "numPages": 8,
     "numLines": 258,
     "numMainCharacters": 4,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "70006102",
@@ -25180,7 +25180,7 @@
     "numPages": 9,
     "numLines": 277,
     "numMainCharacters": 5,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "70201101",
@@ -25319,7 +25319,7 @@
     "numPages": 21,
     "numLines": 748,
     "numMainCharacters": 13,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "70201201",
@@ -25542,7 +25542,7 @@
     "numPages": 18,
     "numLines": 621,
     "numMainCharacters": 4,
-    "conflictType": "其他"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "70202108",
@@ -25634,7 +25634,7 @@
     "numPages": 6,
     "numLines": 206,
     "numMainCharacters": 1,
-    "conflictType": "军事战争冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "70202112",
@@ -25655,7 +25655,7 @@
     "numPages": 24,
     "numLines": 888,
     "numMainCharacters": 17,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "70203101",
@@ -25693,7 +25693,7 @@
     "numPages": 16,
     "numLines": 623,
     "numMainCharacters": 7,
-    "conflictType": "身份命运冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "70203103",
@@ -25731,7 +25731,7 @@
     "numPages": 23,
     "numLines": 890,
     "numMainCharacters": 10,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "70203105",
@@ -25790,7 +25790,7 @@
     "numPages": 27,
     "numLines": 1129,
     "numMainCharacters": 18,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "70203108",
@@ -26095,7 +26095,7 @@
     "numPages": 18,
     "numLines": 669,
     "numMainCharacters": 9,
-    "conflictType": "军事战争冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "70402101",
@@ -26200,7 +26200,7 @@
     "numPages": 14,
     "numLines": 480,
     "numMainCharacters": 8,
-    "conflictType": "军事战争冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "70601101",
@@ -26221,7 +26221,7 @@
     "numPages": 8,
     "numLines": 224,
     "numMainCharacters": 6,
-    "conflictType": "军事战争冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "70601102",
@@ -26387,7 +26387,7 @@
     "numPages": 16,
     "numLines": 682,
     "numMainCharacters": 5,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "70801109",
@@ -26516,7 +26516,7 @@
     "numPages": 20,
     "numLines": 714,
     "numMainCharacters": 4,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "70803102",
@@ -26573,7 +26573,7 @@
     "numPages": 24,
     "numLines": 937,
     "numMainCharacters": 17,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "70805102",
@@ -26637,7 +26637,7 @@
     "numPages": 36,
     "numLines": 1066,
     "numMainCharacters": 28,
-    "conflictType": "复仇报恩冲突"
+    "conflictType": "公案冤屈冲突"
   },
   {
     "id": "70805106",
@@ -26656,7 +26656,7 @@
     "numPages": 36,
     "numLines": 1407,
     "numMainCharacters": 8,
-    "conflictType": "市井生活冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "70805901",
@@ -26696,7 +26696,7 @@
     "numPages": 4,
     "numLines": 91,
     "numMainCharacters": 4,
-    "conflictType": "其他"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "70901102",
@@ -26715,7 +26715,7 @@
     "numPages": 6,
     "numLines": 204,
     "numMainCharacters": 3,
-    "conflictType": "其他"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "70901103",
@@ -26791,7 +26791,7 @@
     "numPages": 3,
     "numLines": 86,
     "numMainCharacters": 4,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "70901107",
@@ -26829,7 +26829,7 @@
     "numPages": 6,
     "numLines": 219,
     "numMainCharacters": 6,
-    "conflictType": "军事战争冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "70901115",
@@ -27171,7 +27171,7 @@
     "numPages": 5,
     "numLines": 141,
     "numMainCharacters": 2,
-    "conflictType": "身份命运冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "70902109",
@@ -27251,7 +27251,7 @@
     "numPages": 2,
     "numLines": 13,
     "numMainCharacters": 1,
-    "conflictType": "其他"
+    "conflictType": "神怪斗法冲突"
   },
   {
     "id": "70902113",
@@ -27270,7 +27270,7 @@
     "numPages": 2,
     "numLines": 49,
     "numMainCharacters": 1,
-    "conflictType": "其他"
+    "conflictType": "神怪斗法冲突"
   },
   {
     "id": "70902114",
@@ -27479,7 +27479,7 @@
     "numPages": 5,
     "numLines": 133,
     "numMainCharacters": 4,
-    "conflictType": "军事战争冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "70902130",
@@ -27498,7 +27498,7 @@
     "numPages": 5,
     "numLines": 138,
     "numMainCharacters": 4,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "70902131",
@@ -27517,7 +27517,7 @@
     "numPages": 2,
     "numLines": 37,
     "numMainCharacters": 3,
-    "conflictType": "其他"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "70902132",
@@ -27593,7 +27593,7 @@
     "numPages": 4,
     "numLines": 113,
     "numMainCharacters": 3,
-    "conflictType": "军事战争冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "70902138",
@@ -27631,7 +27631,7 @@
     "numPages": 5,
     "numLines": 127,
     "numMainCharacters": 7,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "70902142",
@@ -27669,7 +27669,7 @@
     "numPages": 2,
     "numLines": 39,
     "numMainCharacters": 3,
-    "conflictType": "其他"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "70902145",
@@ -27859,7 +27859,7 @@
     "numPages": 3,
     "numLines": 80,
     "numMainCharacters": 4,
-    "conflictType": "身份命运冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "70902176",
@@ -27897,7 +27897,7 @@
     "numPages": 4,
     "numLines": 88,
     "numMainCharacters": 6,
-    "conflictType": "身份命运冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "70902178",
@@ -27954,7 +27954,7 @@
     "numPages": 4,
     "numLines": 86,
     "numMainCharacters": 8,
-    "conflictType": "神怪斗法冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "70904115",
@@ -27992,7 +27992,7 @@
     "numPages": 4,
     "numLines": 87,
     "numMainCharacters": 2,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "复仇报恩冲突"
   },
   {
     "id": "70904208",
@@ -28043,7 +28043,7 @@
     "summary": "杨延辉被擒后，改姓名，与铁镜公主成婚。辽邦萧天佐摆天门阵，佘太君亲征。杨延辉思母，为铁镜公主看\n破，以实告之；铁镜公主计盗令箭，助其出关，私回宋营，母子兄弟相会。杨延辉复回辽邦，被萧后得知，\n欲斩，铁镜公主代为求免。\n根据1937年【百代唱片】32面录音整理：管绍华饰杨延辉，王玉蓉饰铁镜公主，吴彩霞饰萧太后、四夫人，沈\n曼华饰杨宗保，李宝魁饰杨延昭，李多奎饰佘太君，朱斌仙饰大国舅，贾松龄饰二国舅；章梓宸操琴。",
     "sceneCount": 11,
     "authorEra": "录音整理",
-    "narrativePattern": "折子片段型",
+    "narrativePattern": "多峰起伏型",
     "collectionCode": "80000000",
     "collectionName": "录音、唱片本",
     "sourceCollection": "",
@@ -28093,7 +28093,7 @@
     "numPages": 7,
     "numLines": 205,
     "numMainCharacters": 6,
-    "conflictType": "公案冤屈冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "80000004",
@@ -28112,7 +28112,7 @@
     "numPages": 9,
     "numLines": 287,
     "numMainCharacters": 2,
-    "conflictType": "身份命运冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "80000005",
@@ -28301,7 +28301,7 @@
     "numPages": 32,
     "numLines": 1243,
     "numMainCharacters": 9,
-    "conflictType": "复仇报恩冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "80000014",
@@ -28467,7 +28467,7 @@
     "numPages": 11,
     "numLines": 374,
     "numMainCharacters": 8,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "80000022",
@@ -28490,7 +28490,7 @@
     "numPages": 11,
     "numLines": 382,
     "numMainCharacters": 8,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "军事战争冲突"
   },
   {
     "id": "80000023",
@@ -28530,7 +28530,7 @@
     "numPages": 3,
     "numLines": 47,
     "numMainCharacters": 4,
-    "conflictType": "伦理亲情冲突"
+    "conflictType": "忠奸政治冲突"
   },
   {
     "id": "80000025",
@@ -28594,7 +28594,7 @@
     "numPages": 15,
     "numLines": 570,
     "numMainCharacters": 10,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "其他"
   },
   {
     "id": "80000028",
@@ -28691,7 +28691,7 @@
     "numPages": 6,
     "numLines": 204,
     "numMainCharacters": 2,
-    "conflictType": "其他"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "80000036",
@@ -28767,7 +28767,7 @@
     "numPages": 4,
     "numLines": 52,
     "numMainCharacters": 4,
-    "conflictType": "其他"
+    "conflictType": "神怪斗法冲突"
   },
   {
     "id": "90000003",
@@ -28826,7 +28826,7 @@
     "numPages": 9,
     "numLines": 375,
     "numMainCharacters": 2,
-    "conflictType": "身份命运冲突"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "90000006",
@@ -28845,7 +28845,7 @@
     "numPages": 3,
     "numLines": 84,
     "numMainCharacters": 2,
-    "conflictType": "其他"
+    "conflictType": "爱情婚姻冲突"
   },
   {
     "id": "90000007",
@@ -28944,7 +28944,7 @@
     "numPages": 4,
     "numLines": 94,
     "numMainCharacters": 4,
-    "conflictType": "忠奸政治冲突"
+    "conflictType": "身份命运冲突"
   },
   {
     "id": "94000001",
@@ -28963,7 +28963,7 @@
     "numPages": 5,
     "numLines": 103,
     "numMainCharacters": 3,
-    "conflictType": "爱情婚姻冲突"
+    "conflictType": "伦理亲情冲突"
   },
   {
     "id": "94000002",

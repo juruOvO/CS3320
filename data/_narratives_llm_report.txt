@@ -1,23 +1,23 @@
 === augment_narratives_llm.py report ===
 model:              deepseek-chat
 plays requested:    1473
-batches:            0
+batches:            493
 cache hits:         0
-decisions:          0
+decisions:          1473
 fallbacks:          0
 kept existing:      0
 errors:             0
-split retries:      0
-local fixes:        17
-turning points:     3022
-elapsed seconds:    1.6
+split retries:      1
+local fixes:        0
+turning points:     3005
+elapsed seconds:    4263.9
 
 --- pattern distribution ---
-  尾重收束型      531
-  多峰起伏型      302
-  急起直下型      266
+  尾重收束型      525
+  多峰起伏型      308
+  急起直下型      268
   中段高潮型      241
   渐进升级型      78
-  折子片段型      39
-  平稳铺陈型      9
+  折子片段型      38
+  平稳铺陈型      8
   反转突变型      7

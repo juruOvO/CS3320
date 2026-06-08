@@ -1,37 +1,38 @@
 === infer_roles.py LLM report ===
 model:              deepseek-chat
 characters:         18527
-candidates:         3295
-requested:          3295
-batches:            0
+candidates:         3292
+requested:          3292
+batches:            1011
 cache hits:         0
-applied labels:     0
-low-conf labels:    0
+applied labels:     2033
+low-conf labels:    1257
 best-effort labels: 0
-final fallbacks:    745
+final fallbacks:    0
 wrote unknown:      0
 skipped decisions:  0
-errors:             0
+errors:             2
 split retries:      0
-stored unknown fix: 2688
-gender backfilled:  1496
-age backfilled:     1859
-elapsed seconds:    1.8
+stored unknown fix: 0
+gender backfilled:  0
+age backfilled:     0
+elapsed seconds:    6027.5
 
 --- roleMain distribution ---
-  生        8261
-  丑        4415
-  净        3193
-  旦        2658
+  生        8009
+  丑        4571
+  净        3286
+  旦        2661
 
 --- inference source distribution ---
+  llm          9374
   header       7753
-  llm          7341
-  llm_best_effort 2688
-  heuristic_best_effort 745
+  llm_low_confidence 1257
+  heuristic_best_effort 126
+  llm_best_effort 17
 
 --- confidence buckets ---
-  >=0.9    8210
-  0.7-0.9  3849
-  <0.45    3433
-  0.45-0.7 3035
+  >=0.9    8214
+  0.45-0.7 4906
+  0.7-0.9  4007
+  <0.45    1400

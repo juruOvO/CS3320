@@ -3,9 +3,10 @@ model:              deepseek-chat
 plays requested:    1473
 batches:            295
 cache hits:         0
-decisions:          1400
-fallbacks:          73
+decisions:          1473
+fallbacks:          0
 kept existing:      0
-errors:             70
-theme records:      4294
-elapsed seconds:    4141.1
+errors:             0
+split retries:      0
+theme records:      4245
+elapsed seconds:    4466.8
